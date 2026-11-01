@@ -1,0 +1,14 @@
+name: offtopic_workspace
+description: Pub workspace root for the OffTopic app and its native plugins.
+publish_to: none
+
+environment:
+  sdk: ^3.13.7
+
+workspace:
+  - app
+  - packages/voice_core
+  - packages/voice_platform
+
+dev_dependencies:
+  very_good_analysis: ^11.0.0

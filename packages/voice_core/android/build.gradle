@@ -1,0 +1,51 @@
+// Builds libvoice_core.so from ../CMakeLists.txt for every app ABI.
+// The tests are desktop-only (WSL); see tools/verify_core.sh.
+group = "com.isaacgeraldo.offtopic.voicecore"
+version = "0.1.0"
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("com.android.tools.build:gradle:9.1.1")
+    }
+}
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: "com.android.library"
+
+android {
+    namespace = "com.isaacgeraldo.offtopic.voicecore"
+    compileSdk = 37
+    ndkVersion = "30.0.16248370"
+
+    externalNativeBuild {
+        cmake {
+            path = "../CMakeLists.txt"
+            version = "4.1.2"
+        }
+    }
+
+    defaultConfig {
+        minSdk = 29
+        externalNativeBuild {
+            cmake {
+                arguments "-DVC_BUILD_TESTS=OFF", "-DVC_WARNINGS_AS_ERRORS=ON"
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}

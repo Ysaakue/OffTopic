@@ -1,0 +1,3 @@
+[submodule "packages/voice_core/third_party/googletest"]
+	path = packages/voice_core/third_party/googletest
+	url = https://github.com/google/googletest.git

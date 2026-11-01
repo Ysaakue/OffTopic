@@ -1,0 +1,59 @@
+{
+  "@@locale": "en",
+  "appTitle": "OffTopic",
+  "@appTitle": {
+    "description": "Application name, shown in the app bar and task switcher."
+  },
+  "homeTagline": "Group voice room for riders, no internet needed",
+  "@homeTagline": {
+    "description": "One-line description under the app name on the home screen."
+  },
+  "homeCoreVersion": "Voice core {version}",
+  "@homeCoreVersion": {
+    "description": "Version of the native voice core.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.1.0"
+      }
+    }
+  },
+  "homeDevice": "{manufacturer} {model} · {osName} {osVersion}",
+  "@homeDevice": {
+    "description": "Device summary: manufacturer, model, operating system and its version.",
+    "placeholders": {
+      "manufacturer": {
+        "type": "String",
+        "example": "Samsung"
+      },
+      "model": {
+        "type": "String",
+        "example": "SM-S921B"
+      },
+      "osName": {
+        "type": "String",
+        "example": "Android"
+      },
+      "osVersion": {
+        "type": "String",
+        "example": "17"
+      }
+    }
+  },
+  "homeLoading": "Checking the voice core…",
+  "@homeLoading": {
+    "description": "Shown while the home screen reads the core and device information."
+  },
+  "homeCoreError": "The voice core did not respond.",
+  "@homeCoreError": {
+    "description": "Error shown when the native voice core cannot be read."
+  },
+  "homePlatformError": "Could not read the phone information.",
+  "@homePlatformError": {
+    "description": "Error shown when the platform layer (Android or iOS) fails."
+  },
+  "retryButton": "Try again",
+  "@retryButton": {
+    "description": "Button that repeats a failed operation."
+  }
+}

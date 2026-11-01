@@ -1,0 +1,11 @@
+{
+  "@@locale": "pt",
+  "appTitle": "OffTopic",
+  "homeTagline": "Sala de voz em grupo para motociclistas, sem internet",
+  "homeCoreVersion": "Núcleo de voz {version}",
+  "homeDevice": "{manufacturer} {model} · {osName} {osVersion}",
+  "homeLoading": "Verificando o núcleo de voz…",
+  "homeCoreError": "O núcleo de voz não respondeu.",
+  "homePlatformError": "Não foi possível ler as informações do celular.",
+  "retryButton": "Tentar de novo"
+}

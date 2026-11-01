@@ -1,0 +1,11 @@
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+include: ../analysis_options.yaml
+
+linter:
+  rules:
+    # The app is not a library: its public members need no API docs.
+    public_member_api_docs: false

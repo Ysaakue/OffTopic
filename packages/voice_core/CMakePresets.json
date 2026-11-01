@@ -1,0 +1,99 @@
+{
+  "version": 10,
+  "cmakeMinimumRequired": { "major": 4, "minor": 1, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "desktop-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "$env{HOME}/.cache/offtopic/voice_core/${presetName}",
+      "condition": { "type": "notEquals", "lhs": "${hostSystemName}", "rhs": "Windows" },
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "VC_BUILD_TESTS": "ON",
+        "VC_WARNINGS_AS_ERRORS": "ON"
+      }
+    },
+    {
+      "name": "desktop-gcc",
+      "hidden": true,
+      "inherits": "desktop-base",
+      "cacheVariables": { "CMAKE_C_COMPILER": "gcc", "CMAKE_CXX_COMPILER": "g++" }
+    },
+    {
+      "name": "desktop-clang",
+      "hidden": true,
+      "inherits": "desktop-base",
+      "cacheVariables": { "CMAKE_C_COMPILER": "clang", "CMAKE_CXX_COMPILER": "clang++" }
+    },
+    {
+      "name": "desktop-debug",
+      "displayName": "Desktop debug (GCC)",
+      "inherits": "desktop-gcc",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "desktop-asan",
+      "displayName": "Desktop AddressSanitizer + UBSan (clang)",
+      "inherits": "desktop-clang",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "VC_SANITIZER": "address" }
+    },
+    {
+      "name": "desktop-tsan",
+      "displayName": "Desktop ThreadSanitizer (clang)",
+      "inherits": "desktop-clang",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "VC_SANITIZER": "thread" }
+    },
+    {
+      "name": "desktop-coverage",
+      "displayName": "Desktop coverage (GCC + gcovr)",
+      "inherits": "desktop-gcc",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "VC_ENABLE_COVERAGE": "ON" }
+    },
+    {
+      "name": "desktop-fuzz",
+      "displayName": "Desktop libFuzzer (clang + ASan)",
+      "inherits": "desktop-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "VC_SANITIZER": "address",
+        "VC_BUILD_TESTS": "OFF",
+        "VC_BUILD_FUZZERS": "ON"
+      }
+    },
+    {
+      "name": "android-arm64",
+      "displayName": "Android arm64-v8a (native-only build; the APK uses Gradle)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "toolchainFile": "$env{ANDROID_NDK_ROOT}/build/cmake/android.toolchain.cmake",
+      "cacheVariables": {
+        "ANDROID_ABI": "arm64-v8a",
+        "ANDROID_PLATFORM": "android-29",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VC_BUILD_TESTS": "OFF",
+        "VC_WARNINGS_AS_ERRORS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "desktop-debug", "configurePreset": "desktop-debug" },
+    { "name": "desktop-asan", "configurePreset": "desktop-asan" },
+    { "name": "desktop-tsan", "configurePreset": "desktop-tsan" },
+    { "name": "desktop-coverage", "configurePreset": "desktop-coverage" },
+    { "name": "desktop-fuzz", "configurePreset": "desktop-fuzz" },
+    { "name": "android-arm64", "configurePreset": "android-arm64" }
+  ],
+  "testPresets": [
+    {
+      "name": "desktop-test-base",
+      "hidden": true,
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error", "stopOnFailure": false }
+    },
+    { "name": "desktop-debug", "inherits": "desktop-test-base", "configurePreset": "desktop-debug" },
+    { "name": "desktop-asan", "inherits": "desktop-test-base", "configurePreset": "desktop-asan" },
+    { "name": "desktop-tsan", "inherits": "desktop-test-base", "configurePreset": "desktop-tsan" },
+    { "name": "desktop-coverage", "inherits": "desktop-test-base", "configurePreset": "desktop-coverage" }
+  ]
+}
