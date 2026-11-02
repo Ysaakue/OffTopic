@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:offtopic/core/permissions/permission_requester.dart';
 import 'package:voice_core/voice_core.dart';
 import 'package:voice_platform/voice_platform.dart';
 
@@ -15,6 +16,14 @@ final voiceCoreClientProvider = Provider<VoiceCoreClient>(
 final voicePlatformGatewayProvider = Provider<VoicePlatformGateway>(
   (ref) => throw UnimplementedError(
     'voicePlatformGatewayProvider must be overridden (see main.dart).',
+  ),
+);
+
+/// Runtime permissions. Overridden in `main.dart` with the permission_handler
+/// plugin and in tests with a fake.
+final permissionRequesterProvider = Provider<PermissionRequester>(
+  (ref) => throw UnimplementedError(
+    'permissionRequesterProvider must be overridden (see main.dart).',
   ),
 );
 

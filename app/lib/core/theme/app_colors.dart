@@ -31,4 +31,7 @@ abstract final class AppColors {
 
   /// Supporting text.
   static const onSurfaceVariant = Color(0xFFE0E0E0);
+
+  /// Empty part of meters (e.g. the microphone level), distinct from the fill.
+  static const meterTrack = Color(0xFF424242);
 }

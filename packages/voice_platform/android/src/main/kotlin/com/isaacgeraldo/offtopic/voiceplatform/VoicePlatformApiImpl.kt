@@ -5,20 +5,28 @@ import com.isaacgeraldo.offtopic.voiceplatform.generated.PlatformCapabilitiesMes
 import com.isaacgeraldo.offtopic.voiceplatform.generated.PlatformInfoMessage
 import com.isaacgeraldo.offtopic.voiceplatform.generated.RoomConfigMessage
 import com.isaacgeraldo.offtopic.voiceplatform.generated.VoicePlatformHostApi
+import com.isaacgeraldo.offtopic.voiceplatform.room.RoomController
 import com.isaacgeraldo.offtopic.voiceplatform.system.DeviceInfoProvider
 import com.isaacgeraldo.offtopic.voiceplatform.system.KeepScreenOnController
 import com.isaacgeraldo.offtopic.voiceplatform.system.SdkLevel
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 
 /**
  * Android implementation of the Pigeon host API.
  *
  * Methods owned by later phases fail with [PlatformErrorCodes.NOT_IMPLEMENTED]
  * so that Dart can tell "not built yet" apart from a real failure.
+ *
+ * @param roomDispatcher where the room starts and stops (opening the audio
+ *   device and the socket must not block the main thread).
  */
 internal class VoicePlatformApiImpl(
     private val sdkLevel: SdkLevel,
     private val deviceInfo: DeviceInfoProvider,
     private val keepScreenOn: KeepScreenOnController,
+    private val room: RoomController,
+    private val roomDispatcher: CoroutineDispatcher,
 ) : VoicePlatformHostApi {
     override fun getPlatformInfo(): PlatformInfoMessage =
         PlatformInfoMessage(
@@ -30,11 +38,11 @@ internal class VoicePlatformApiImpl(
             capabilities = ANDROID_CAPABILITIES,
         )
 
-    override suspend fun startRoom(config: RoomConfigMessage): Unit = throw PlatformErrors.notImplemented("startRoom")
+    override suspend fun startRoom(config: RoomConfigMessage) = withContext(roomDispatcher) { room.start(config) }
 
-    override suspend fun stopRoom(): Unit = throw PlatformErrors.notImplemented("stopRoom")
+    override suspend fun stopRoom() = withContext(roomDispatcher) { room.stop() }
 
-    override fun setMute(muted: Boolean): Unit = throw PlatformErrors.notImplemented("setMute")
+    override fun setMute(muted: Boolean) = room.setMute(muted)
 
     override fun openHotspotSettings(): Unit = throw PlatformErrors.notImplemented("openHotspotSettings")
 
@@ -43,8 +51,7 @@ internal class VoicePlatformApiImpl(
 
     override fun setKeepScreenOn(enabled: Boolean) = keepScreenOn.setKeepScreenOn(enabled)
 
-    /** No room can be running before the foreground service exists (phase 4). */
-    override fun getActiveRoom(): ActiveRoomMessage? = null
+    override fun getActiveRoom(): ActiveRoomMessage? = room.activeRoom
 
     companion object {
         const val OS_NAME = "android"

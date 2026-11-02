@@ -38,8 +38,12 @@ void main() {
       expect(message, sampleClientConfigMessage());
     });
 
-    test('round-trips, including a null host IP', () {
-      for (final config in [sampleClientConfig, sampleHostConfig]) {
+    test('round-trips, including a null host IP and echo mode', () {
+      for (final config in [
+        sampleClientConfig,
+        sampleHostConfig,
+        sampleEchoHostConfig,
+      ]) {
         expect(config.toMessage().toModel(), config);
       }
     });

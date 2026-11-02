@@ -1,7 +1,10 @@
 package com.isaacgeraldo.offtopic.voiceplatform
 
 import android.app.Activity
+import android.content.Context
 import android.view.WindowManager
+import androidx.test.core.app.ApplicationProvider
+import com.isaacgeraldo.offtopic.voiceplatform.core.FakeVoiceCoreBridge
 import com.isaacgeraldo.offtopic.voiceplatform.system.ActivityKeepScreenOnController
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -14,6 +17,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -24,9 +28,15 @@ class VoicePlatformPluginTest {
     private val engineBinding =
         mockk<FlutterPlugin.FlutterPluginBinding> {
             every { binaryMessenger } returns messenger
+            every { applicationContext } returns ApplicationProvider.getApplicationContext<Context>()
         }
     private val keepScreenOn = ActivityKeepScreenOnController()
-    private val plugin = VoicePlatformPlugin(keepScreenOn)
+    private var coresCreated = 0
+    private val plugin =
+        VoicePlatformPlugin(keepScreenOn) {
+            coresCreated++
+            FakeVoiceCoreBridge()
+        }
 
     @Test
     fun `attaching to the engine registers the host api and the state stream`() {
@@ -34,6 +44,13 @@ class VoicePlatformPluginTest {
 
         verify { messenger.setMessageHandler(HOST_API_CHANNEL, isNull(inverse = true)) }
         verify { messenger.setMessageHandler(STATE_STREAM_CHANNEL, isNull(inverse = true)) }
+    }
+
+    @Test
+    fun `the native core is only loaded when a room starts`() {
+        plugin.onAttachedToEngine(engineBinding)
+
+        assertEquals(0, coresCreated)
     }
 
     @Test

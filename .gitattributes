@@ -11,3 +11,6 @@
 *.jpg binary
 *.jar binary
 *.wav binary
+
+# Fuzz seed corpora.
+*.bin binary

@@ -47,16 +47,14 @@ Invoke-Step 'Flutter pin (.fvmrc)' { Assert-Fvm -RepoRoot $repoRoot; Write-Host 
 
 if (-not $SkipCodegen) {
     Invoke-Step 'Code generation is up to date' {
+        # Stale means "regenerating changes the files on disk", whether or not
+        # the sources are committed yet.
+        $before = Get-GeneratedHashes -RepoRoot $repoRoot -Paths $generatedPaths
         & (Join-Path $PSScriptRoot 'codegen.ps1')
-        Push-Location $repoRoot
-        try {
-            # Only tracked files can be stale; untracked output is new, not stale.
-            $stale = git status --porcelain -- $generatedPaths | Where-Object { $_ -notmatch '^\?\?' }
-        } finally {
-            Pop-Location
-        }
-        if ($stale) {
-            throw "Generated code was out of date and has been regenerated; review and commit it:`n$($stale -join "`n")"
+        $after = Get-GeneratedHashes -RepoRoot $repoRoot -Paths $generatedPaths
+        $stale = @($after.Keys + $before.Keys | Sort-Object -Unique | Where-Object { $before[$_] -ne $after[$_] })
+        if ($stale.Count -gt 0) {
+            throw "Generated code was out of date and has been regenerated; review it:`n$($stale -join "`n")"
         }
     }
 }
@@ -104,7 +102,15 @@ if (-not $SkipAndroid) {
 if (-not $SkipCore) {
     Invoke-Step "C++ core in WSL ($WslDistro)" {
         # Called directly: PowerShell would bind '-d' and '--' as its own tokens.
-        & wsl.exe '-d' $WslDistro '--cd' $repoRoot '--' 'bash' 'tools/verify_core.sh'
+        # As in Invoke-Native, only the exit code decides (libFuzzer and
+        # ctest write progress to stderr).
+        $previousPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            & wsl.exe '-d' $WslDistro '--cd' $repoRoot '--' 'bash' 'tools/verify_core.sh'
+        } finally {
+            $ErrorActionPreference = $previousPreference
+        }
         if ($LASTEXITCODE -ne 0) {
             throw "tools/verify_core.sh failed with exit code $LASTEXITCODE."
         }

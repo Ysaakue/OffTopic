@@ -11,6 +11,24 @@ abstract final class VoicePlatformErrorCode {
 
   /// The host side of the channel is missing (plugin not registered).
   static const channelError = 'channel-error';
+
+  /// startRoom while a room is already running.
+  static const roomAlreadyActive = 'room_already_active';
+
+  /// A room command (e.g. setMute) without a running room.
+  static const noActiveRoom = 'no_active_room';
+
+  /// The voice core rejected the room configuration.
+  static const invalidConfig = 'invalid_config';
+
+  /// The microphone or the speaker could not be opened.
+  static const audioDeviceError = 'audio_device_error';
+
+  /// The UDP socket could not be opened.
+  static const networkError = 'network_error';
+
+  /// Any other voice core failure.
+  static const coreError = 'core_error';
 }
 
 /// A failure reported by the host platform.

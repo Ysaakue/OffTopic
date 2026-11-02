@@ -61,6 +61,7 @@ extension RoomConfigToMessage on RoomConfig {
     controlPort: controlPort,
     audioPort: audioPort,
     bitrateBps: bitrateBps,
+    echoMode: echoMode,
   );
 }
 
@@ -74,6 +75,7 @@ extension RoomConfigMessageToModel on RoomConfigMessage {
     controlPort: controlPort,
     audioPort: audioPort,
     bitrateBps: bitrateBps,
+    echoMode: echoMode,
   );
 }
 

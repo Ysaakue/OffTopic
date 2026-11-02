@@ -53,6 +53,24 @@ function Get-FlutterJdk {
     return $match.Groups['path'].Value.Trim()
 }
 
+# SHA-256 of every file under the given repo-relative paths (files or folders).
+function Get-GeneratedHashes {
+    param(
+        [Parameter(Mandatory)] [string] $RepoRoot,
+        [Parameter(Mandatory)] [string[]] $Paths
+    )
+    $hashes = @{}
+    foreach ($path in $Paths) {
+        $fullPath = Join-Path $RepoRoot $path
+        if (Test-Path $fullPath) {
+            Get-ChildItem $fullPath -File -Recurse | ForEach-Object {
+                $hashes[$_.FullName.Substring($RepoRoot.Length + 1)] = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
+            }
+        }
+    }
+    return $hashes
+}
+
 function Invoke-Step {
     param(
         [Parameter(Mandatory)] [string] $Name,
@@ -62,7 +80,9 @@ function Invoke-Step {
     & $Action
 }
 
-# Runs a native command and throws when it fails.
+# Runs a native command and throws when it fails. Only the exit code decides:
+# tools such as dart print progress on stderr, which Windows PowerShell would
+# otherwise turn into terminating errors when the output is redirected.
 function Invoke-Native {
     param(
         [string] $WorkingDirectory = (Get-Location).Path,
@@ -70,12 +90,15 @@ function Invoke-Native {
         [Parameter(ValueFromRemainingArguments)] [string[]] $Arguments
     )
     Push-Location $WorkingDirectory
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
     try {
         & $Command @Arguments
         if ($LASTEXITCODE -ne 0) {
             throw "'$Command $($Arguments -join ' ')' failed with exit code $LASTEXITCODE (in $WorkingDirectory)."
         }
     } finally {
+        $ErrorActionPreference = $previousPreference
         Pop-Location
     }
 }

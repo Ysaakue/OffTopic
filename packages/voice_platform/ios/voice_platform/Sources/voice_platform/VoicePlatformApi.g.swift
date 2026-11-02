@@ -215,6 +215,8 @@ struct RoomConfigMessage: Hashable, CustomStringConvertible {
   var controlPort: Int64
   var audioPort: Int64
   var bitrateBps: Int64
+  /// Host only: return every audio packet to its sender (round-trip test).
+  var echoMode: Bool
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -225,6 +227,7 @@ struct RoomConfigMessage: Hashable, CustomStringConvertible {
     let controlPort = pigeonVar_list[3] as! Int64
     let audioPort = pigeonVar_list[4] as! Int64
     let bitrateBps = pigeonVar_list[5] as! Int64
+    let echoMode = pigeonVar_list[6] as! Bool
 
     return RoomConfigMessage(
       role: role,
@@ -232,7 +235,8 @@ struct RoomConfigMessage: Hashable, CustomStringConvertible {
       displayName: displayName,
       controlPort: controlPort,
       audioPort: audioPort,
-      bitrateBps: bitrateBps
+      bitrateBps: bitrateBps,
+      echoMode: echoMode
     )
   }
   func toList() -> [Any?] {
@@ -243,13 +247,14 @@ struct RoomConfigMessage: Hashable, CustomStringConvertible {
       controlPort,
       audioPort,
       bitrateBps,
+      echoMode,
     ]
   }
   static func == (lhs: RoomConfigMessage, rhs: RoomConfigMessage) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return VoicePlatformApiPigeonInternal.deepEquals(lhs.role, rhs.role) && VoicePlatformApiPigeonInternal.deepEquals(lhs.hostIp, rhs.hostIp) && VoicePlatformApiPigeonInternal.deepEquals(lhs.displayName, rhs.displayName) && VoicePlatformApiPigeonInternal.deepEquals(lhs.controlPort, rhs.controlPort) && VoicePlatformApiPigeonInternal.deepEquals(lhs.audioPort, rhs.audioPort) && VoicePlatformApiPigeonInternal.deepEquals(lhs.bitrateBps, rhs.bitrateBps)
+    return VoicePlatformApiPigeonInternal.deepEquals(lhs.role, rhs.role) && VoicePlatformApiPigeonInternal.deepEquals(lhs.hostIp, rhs.hostIp) && VoicePlatformApiPigeonInternal.deepEquals(lhs.displayName, rhs.displayName) && VoicePlatformApiPigeonInternal.deepEquals(lhs.controlPort, rhs.controlPort) && VoicePlatformApiPigeonInternal.deepEquals(lhs.audioPort, rhs.audioPort) && VoicePlatformApiPigeonInternal.deepEquals(lhs.bitrateBps, rhs.bitrateBps) && VoicePlatformApiPigeonInternal.deepEquals(lhs.echoMode, rhs.echoMode)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -260,10 +265,11 @@ struct RoomConfigMessage: Hashable, CustomStringConvertible {
     VoicePlatformApiPigeonInternal.deepHash(value: controlPort, hasher: &hasher)
     VoicePlatformApiPigeonInternal.deepHash(value: audioPort, hasher: &hasher)
     VoicePlatformApiPigeonInternal.deepHash(value: bitrateBps, hasher: &hasher)
+    VoicePlatformApiPigeonInternal.deepHash(value: echoMode, hasher: &hasher)
   }
 
   public var description: String {
-    return "RoomConfigMessage(role: \(String(describing: role)), hostIp: \(String(describing: hostIp)), displayName: \(String(describing: displayName)), controlPort: \(String(describing: controlPort)), audioPort: \(String(describing: audioPort)), bitrateBps: \(String(describing: bitrateBps)))"
+    return "RoomConfigMessage(role: \(String(describing: role)), hostIp: \(String(describing: hostIp)), displayName: \(String(describing: displayName)), controlPort: \(String(describing: controlPort)), audioPort: \(String(describing: audioPort)), bitrateBps: \(String(describing: bitrateBps)), echoMode: \(String(describing: echoMode)))"
   }
 }
 
@@ -554,7 +560,7 @@ var voicePlatformApiPigeonMethodCodec = FlutterStandardMethodCodec(readerWriter:
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol VoicePlatformHostApi {
   func getPlatformInfo() throws -> PlatformInfoMessage
-  /// Starts the foreground service that owns the room session.
+  /// Starts the room session (inside the foreground service from phase 4).
   func startRoom(config: RoomConfigMessage) async throws
   func stopRoom() async throws
   func setMute(muted: Bool) throws
@@ -587,7 +593,7 @@ class VoicePlatformHostApiSetup {
     } else {
       getPlatformInfoChannel.setMessageHandler(nil)
     }
-    /// Starts the foreground service that owns the room session.
+    /// Starts the room session (inside the foreground service from phase 4).
     let startRoomChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.voice_platform.VoicePlatformHostApi.startRoom\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       startRoomChannel.setMessageHandler { message, reply in

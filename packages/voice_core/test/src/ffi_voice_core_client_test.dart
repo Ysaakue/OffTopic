@@ -2,11 +2,14 @@ import 'dart:ffi';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:voice_core/src/generated/voice_core_bindings.g.dart';
 import 'package:voice_core/voice_core.dart';
 
 import '../support/mock_voice_core_bindings.dart';
 
 void main() {
+  setUpAll(registerBindingFallbacks);
+
   group('FfiVoiceCoreClient', () {
     late MockVoiceCoreBindings bindings;
     late NativeStrings strings;
@@ -68,6 +71,132 @@ void main() {
     test('open uses the platform loader by default', () {
       // Tests run on a desktop host, where the core is not packaged.
       expect(FfiVoiceCoreClient.open, throwsUnsupportedError);
+    });
+  });
+
+  // Payload ownership (CLAUDE.md): the core allocates every payload and Dart
+  // frees it exactly once with vc_free_event_payload, even when decoding fails.
+  group('FfiVoiceCoreClient events', () {
+    late MockVoiceCoreBindings bindings;
+    late NativeCoreDouble core;
+    late FfiVoiceCoreClient client;
+    late List<CoreEvent> events;
+    late List<Object> errors;
+
+    setUp(() {
+      bindings = MockVoiceCoreBindings();
+      core = NativeCoreDouble(bindings);
+      client = FfiVoiceCoreClient(bindings);
+      events = [];
+      errors = [];
+      client.events.listen(events.add, onError: errors.add);
+    });
+
+    tearDown(() => client.dispose());
+
+    test('frees every decoded payload once', () async {
+      core
+        ..sendJson(1, '{"state":"running"}')
+        ..sendJson(2, '{"up":false,"peer":"10.0.0.2:5"}');
+      await pumpEventQueue();
+
+      expect(events, const [
+        CoreStateChanged(CoreState.running),
+        CoreLinkChanged(up: false, peer: '10.0.0.2:5'),
+      ]);
+      expect(core.freedPayloads, core.sentPayloads);
+    });
+
+    test('frees the payload when the JSON is invalid', () async {
+      core.sendJson(1, '{"state":');
+      await pumpEventQueue();
+
+      expect(errors.single, isA<VoiceCoreException>());
+      expect(core.freedPayloads, core.sentPayloads);
+    });
+
+    test('frees the payload when it is not UTF-8', () async {
+      core.send(1, [0xC3, 0x28]);
+      await pumpEventQueue();
+
+      expect(
+        errors.single,
+        isA<VoiceCoreException>().having(
+          (e) => e.message,
+          'message',
+          contains('UTF-8'),
+        ),
+      );
+      expect(core.freedPayloads, core.sentPayloads);
+    });
+
+    test('frees and ignores an unknown event type', () async {
+      core.sendJson(99, '{"future":true}');
+      await pumpEventQueue();
+
+      expect(events, isEmpty);
+      expect(errors, isEmpty);
+      expect(core.freedPayloads, core.sentPayloads);
+    });
+
+    test('reports a missing payload without freeing anything', () async {
+      core.callback.asFunction<void Function(int, Pointer<Char>)>()(1, nullptr);
+      await pumpEventQueue();
+
+      expect(errors.single, isA<VoiceCoreException>());
+      expect(core.freedPayloads, isEmpty);
+    });
+
+    test('dispose unregisters the callback once', () {
+      client
+        ..dispose()
+        ..dispose();
+
+      expect(core.callbackRegistered, isFalse);
+      verify(() => bindings.vc_set_event_callback(nullptr)).called(1);
+    });
+  });
+
+  group('FfiVoiceCoreClient statistics', () {
+    test('maps an unknown RTT to null', () {
+      final bindings = MockVoiceCoreBindings();
+      NativeCoreDouble(bindings).arrangeStatsResult(
+        vc_result.VC_OK,
+        const CoreStats(
+          participants: 0,
+          lossPct: 0,
+          jitterMs: 0,
+          jitterBufferMs: 0,
+          jitterTargetMs: 40,
+          inputLevel: 0,
+          packetsSent: 0,
+          packetsReceived: 0,
+          packetsLost: 0,
+          packetsLate: 0,
+          fecRecovered: 0,
+          concealedFrames: 0,
+          playoutUnderruns: 0,
+          captureOverruns: 0,
+        ),
+      );
+
+      expect(FfiVoiceCoreClient(bindings).readStats()?.rttMs, isNull);
+    });
+
+    test('names the failing result code', () {
+      final bindings = MockVoiceCoreBindings();
+      NativeCoreDouble(bindings).arrangeStatsResult(vc_result.VC_ERR_INTERNAL);
+
+      expect(
+        FfiVoiceCoreClient(bindings).readStats,
+        throwsA(
+          isA<VoiceCoreException>().having(
+            (e) => e.message,
+            'message',
+            contains('-6'),
+          ),
+        ),
+      );
     });
   });
 }

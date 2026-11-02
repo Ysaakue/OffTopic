@@ -21,6 +21,134 @@ class VoiceCoreBindings {
     ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup,
   ) : _lookup = lookup;
 
+  /// Fills `out` with the default configuration (client role, no strings).
+  void vc_config_defaults(ffi.Pointer<vc_config> out) {
+    return _vc_config_defaults(out);
+  }
+
+  late final _vc_config_defaultsPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<vc_config>)>>(
+        'vc_config_defaults',
+      );
+  late final _vc_config_defaults = _vc_config_defaultsPtr
+      .asFunction<void Function(ffi.Pointer<vc_config>)>();
+
+  /// Releases a payload received by the event callback. NULL is ignored.
+  void vc_free_event_payload(ffi.Pointer<ffi.Char> payload) {
+    return _vc_free_event_payload(payload);
+  }
+
+  late final _vc_free_event_payloadPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>(
+        'vc_free_event_payload',
+      );
+  late final _vc_free_event_payload = _vc_free_event_payloadPtr
+      .asFunction<void Function(ffi.Pointer<ffi.Char>)>();
+
+  /// Copies the latest statistics. VC_ERR_INVALID_STATE (and zeros) when idle.
+  int vc_get_stats(ffi.Pointer<vc_stats> out) {
+    return _vc_get_stats(out);
+  }
+
+  late final _vc_get_statsPtr =
+      _lookup<ffi.NativeFunction<ffi.Int32 Function(ffi.Pointer<vc_stats>)>>(
+        'vc_get_stats',
+      );
+  late final _vc_get_stats = _vc_get_statsPtr
+      .asFunction<int Function(ffi.Pointer<vc_stats>)>();
+
+  /// Validates and stores the configuration (strings are copied).
+  int vc_init(ffi.Pointer<vc_config> config) {
+    return _vc_init(config);
+  }
+
+  late final _vc_initPtr =
+      _lookup<ffi.NativeFunction<ffi.Int32 Function(ffi.Pointer<vc_config>)>>(
+        'vc_init',
+      );
+  late final _vc_init = _vc_initPtr
+      .asFunction<int Function(ffi.Pointer<vc_config>)>();
+
+  /// Registers the event callback; NULL unregisters. After this returns, the
+  /// previous callback is never called again.
+  void vc_set_event_callback(
+    ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Void Function(ffi.Int32 event, ffi.Pointer<ffi.Char> payload)
+      >
+    >
+    callback,
+  ) {
+    return _vc_set_event_callback(callback);
+  }
+
+  late final _vc_set_event_callbackPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Void Function(
+            ffi.Pointer<
+              ffi.NativeFunction<
+                ffi.Void Function(
+                  ffi.Int32 event,
+                  ffi.Pointer<ffi.Char> payload,
+                )
+              >
+            >,
+          )
+        >
+      >('vc_set_event_callback');
+  late final _vc_set_event_callback = _vc_set_event_callbackPtr
+      .asFunction<
+        void Function(
+          ffi.Pointer<
+            ffi.NativeFunction<
+              ffi.Void Function(ffi.Int32 event, ffi.Pointer<ffi.Char> payload)
+            >
+          >,
+        )
+      >();
+
+  /// Stops sending the microphone (keepalives continue).
+  void vc_set_mute(int muted) {
+    return _vc_set_mute(muted);
+  }
+
+  late final _vc_set_mutePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int32)>>('vc_set_mute');
+  late final _vc_set_mute = _vc_set_mutePtr.asFunction<void Function(int)>();
+
+  /// Playback gain, clamped to [0, 4]. Non-finite values are ignored.
+  void vc_set_output_gain(double gain) {
+    return _vc_set_output_gain(gain);
+  }
+
+  late final _vc_set_output_gainPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Float)>>(
+        'vc_set_output_gain',
+      );
+  late final _vc_set_output_gain = _vc_set_output_gainPtr
+      .asFunction<void Function(double)>();
+
+  /// Opens the socket and the audio device and starts the session.
+  int vc_start() {
+    return _vc_start();
+  }
+
+  late final _vc_startPtr = _lookup<ffi.NativeFunction<ffi.Int32 Function()>>(
+    'vc_start',
+  );
+  late final _vc_start = _vc_startPtr.asFunction<int Function()>();
+
+  /// Stops the session. Safe to call at any time, repeatedly.
+  void vc_stop() {
+    return _vc_stop();
+  }
+
+  late final _vc_stopPtr = _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+    'vc_stop',
+  );
+  late final _vc_stop = _vc_stopPtr.asFunction<void Function()>();
+
   /// Returns the semantic version of the voice core ("MAJOR.MINOR.PATCH").
   ///
   /// The string is static and NUL-terminated; the caller must not free it.
@@ -34,4 +162,233 @@ class VoiceCoreBindings {
       );
   late final _vc_version = _vc_versionPtr
       .asFunction<ffi.Pointer<ffi.Char> Function()>();
+}
+
+/// Session configuration. Start from vc_config_defaults() and override fields:
+/// the defaults live in the core only (one configuration struct).
+final class vc_config extends ffi.Struct {
+  @ffi.Int32()
+  external int role;
+
+  external ffi.Pointer<ffi.Char> host_ip;
+
+  external ffi.Pointer<ffi.Char> display_name;
+
+  @ffi.Uint16()
+  external int control_port;
+
+  @ffi.Uint16()
+  external int audio_port;
+
+  @ffi.Int32()
+  external int sample_rate_hz;
+
+  @ffi.Int32()
+  external int frame_samples;
+
+  @ffi.Int32()
+  external int bitrate_bps;
+
+  @ffi.Int32()
+  external int fec_enabled;
+
+  @ffi.Int32()
+  external int expected_loss_pct;
+
+  @ffi.Int32()
+  external int dtx_enabled;
+
+  @ffi.Int32()
+  external int jitter_min_ms;
+
+  @ffi.Int32()
+  external int jitter_initial_ms;
+
+  @ffi.Int32()
+  external int jitter_max_ms;
+
+  @ffi.Int32()
+  external int keepalive_interval_ms;
+
+  @ffi.Int32()
+  external int peer_timeout_ms;
+
+  @ffi.Int32()
+  external int echo_mode;
+
+  static ffi.Pointer<vc_config> $allocate(
+    ffi.Allocator $allocator, {
+    required int role,
+    required ffi.Pointer<ffi.Char> host_ip,
+    required ffi.Pointer<ffi.Char> display_name,
+    required int control_port,
+    required int audio_port,
+    required int sample_rate_hz,
+    required int frame_samples,
+    required int bitrate_bps,
+    required int fec_enabled,
+    required int expected_loss_pct,
+    required int dtx_enabled,
+    required int jitter_min_ms,
+    required int jitter_initial_ms,
+    required int jitter_max_ms,
+    required int keepalive_interval_ms,
+    required int peer_timeout_ms,
+    required int echo_mode,
+  }) => $allocator<vc_config>()
+    ..ref.role = role
+    ..ref.host_ip = host_ip
+    ..ref.display_name = display_name
+    ..ref.control_port = control_port
+    ..ref.audio_port = audio_port
+    ..ref.sample_rate_hz = sample_rate_hz
+    ..ref.frame_samples = frame_samples
+    ..ref.bitrate_bps = bitrate_bps
+    ..ref.fec_enabled = fec_enabled
+    ..ref.expected_loss_pct = expected_loss_pct
+    ..ref.dtx_enabled = dtx_enabled
+    ..ref.jitter_min_ms = jitter_min_ms
+    ..ref.jitter_initial_ms = jitter_initial_ms
+    ..ref.jitter_max_ms = jitter_max_ms
+    ..ref.keepalive_interval_ms = keepalive_interval_ms
+    ..ref.peer_timeout_ms = peer_timeout_ms
+    ..ref.echo_mode = echo_mode;
+}
+
+/// Event types and their JSON payloads:
+/// VC_EVENT_STATE_CHANGED  {"state":"running"|"stopped"|"failed"[,"error":<vc_result>]}
+/// VC_EVENT_LINK_CHANGED   {"up":true|false,"peer":"a.b.c.d:port"}
+enum vc_event_type {
+  VC_EVENT_STATE_CHANGED(1),
+  VC_EVENT_LINK_CHANGED(2);
+
+  final int value;
+  const vc_event_type(this.value);
+
+  static vc_event_type fromValue(int value) => switch (value) {
+    1 => VC_EVENT_STATE_CHANGED,
+    2 => VC_EVENT_LINK_CHANGED,
+    _ => throw ArgumentError('Unknown value for vc_event_type: $value'),
+  };
+}
+
+/// Result codes. 0 is success; every failure is negative.
+enum vc_result {
+  VC_OK(0),
+  VC_ERR_INVALID_ARGUMENT(-1),
+  VC_ERR_INVALID_STATE(-2),
+  VC_ERR_AUDIO_DEVICE(-3),
+  VC_ERR_NETWORK(-4),
+  VC_ERR_CODEC(-5),
+  VC_ERR_INTERNAL(-6);
+
+  final int value;
+  const vc_result(this.value);
+
+  static vc_result fromValue(int value) => switch (value) {
+    0 => VC_OK,
+    -1 => VC_ERR_INVALID_ARGUMENT,
+    -2 => VC_ERR_INVALID_STATE,
+    -3 => VC_ERR_AUDIO_DEVICE,
+    -4 => VC_ERR_NETWORK,
+    -5 => VC_ERR_CODEC,
+    -6 => VC_ERR_INTERNAL,
+    _ => throw ArgumentError('Unknown value for vc_result: $value'),
+  };
+}
+
+enum vc_role {
+  VC_ROLE_CLIENT(0),
+  VC_ROLE_HOST(1);
+
+  final int value;
+  const vc_role(this.value);
+
+  static vc_role fromValue(int value) => switch (value) {
+    0 => VC_ROLE_CLIENT,
+    1 => VC_ROLE_HOST,
+    _ => throw ArgumentError('Unknown value for vc_role: $value'),
+  };
+}
+
+/// Snapshot of the running session.
+final class vc_stats extends ffi.Struct {
+  @ffi.Int32()
+  external int participants;
+
+  @ffi.Float()
+  external double loss_pct;
+
+  @ffi.Float()
+  external double jitter_ms;
+
+  @ffi.Int32()
+  external int jitter_buffer_ms;
+
+  @ffi.Int32()
+  external int jitter_target_ms;
+
+  @ffi.Int32()
+  external int rtt_ms;
+
+  @ffi.Float()
+  external double input_level;
+
+  @ffi.Uint32()
+  external int packets_sent;
+
+  @ffi.Uint32()
+  external int packets_received;
+
+  @ffi.Uint32()
+  external int packets_lost;
+
+  @ffi.Uint32()
+  external int packets_late;
+
+  @ffi.Uint32()
+  external int fec_recovered;
+
+  @ffi.Uint32()
+  external int concealed_frames;
+
+  @ffi.Uint32()
+  external int playout_underruns;
+
+  @ffi.Uint32()
+  external int capture_overruns;
+
+  static ffi.Pointer<vc_stats> $allocate(
+    ffi.Allocator $allocator, {
+    required int participants,
+    required double loss_pct,
+    required double jitter_ms,
+    required int jitter_buffer_ms,
+    required int jitter_target_ms,
+    required int rtt_ms,
+    required double input_level,
+    required int packets_sent,
+    required int packets_received,
+    required int packets_lost,
+    required int packets_late,
+    required int fec_recovered,
+    required int concealed_frames,
+    required int playout_underruns,
+    required int capture_overruns,
+  }) => $allocator<vc_stats>()
+    ..ref.participants = participants
+    ..ref.loss_pct = loss_pct
+    ..ref.jitter_ms = jitter_ms
+    ..ref.jitter_buffer_ms = jitter_buffer_ms
+    ..ref.jitter_target_ms = jitter_target_ms
+    ..ref.rtt_ms = rtt_ms
+    ..ref.input_level = input_level
+    ..ref.packets_sent = packets_sent
+    ..ref.packets_received = packets_received
+    ..ref.packets_lost = packets_lost
+    ..ref.packets_late = packets_late
+    ..ref.fec_recovered = fec_recovered
+    ..ref.concealed_frames = concealed_frames
+    ..ref.playout_underruns = playout_underruns
+    ..ref.capture_overruns = capture_overruns;
 }

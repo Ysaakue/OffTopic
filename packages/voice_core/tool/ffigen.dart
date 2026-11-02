@@ -6,6 +6,8 @@
 //
 // libclang comes from the Android NDK pinned in docs/DEPENDENCIES.md, so no
 // separate LLVM install is needed on Windows. Override with LIBCLANG_PATH.
+// On Windows the C standard headers (stdint.h) come from the NDK sysroot: the
+// bindings target Android, and the C API only uses fixed-width types.
 import 'dart:io';
 
 import 'package:ffigen/ffigen.dart';
@@ -25,6 +27,8 @@ Future<void> main() async {
     input: Input(
       entryPoints: [header],
       include: (uri) => uri.path.endsWith('voice_core.h'),
+      compilerOptions: _compilerOptions(),
+      appendCompilerOptions: true,
     ),
     // Top-level declarations are excluded by default; keep only the C API.
     visitors: [
@@ -61,12 +65,26 @@ Uri? _libclang() {
   if (!Platform.isWindows) {
     return null; // Let ffigen find the system libclang.
   }
+  return Uri.file('${_ndkLlvm()}\\bin\\libclang.dll');
+}
+
+List<String>? _compilerOptions() {
+  if (!Platform.isWindows) {
+    return null; // The system headers are found by default.
+  }
+  // libclang.dll does not locate its resource headers (stddef.h) by itself.
+  final clangVersions = Directory('${_ndkLlvm()}\\lib\\clang').listSync();
+  return [
+    '--target=aarch64-linux-android29',
+    '--sysroot=${_ndkLlvm()}\\sysroot',
+    '-resource-dir=${clangVersions.first.path}',
+  ];
+}
+
+String _ndkLlvm() {
   final sdk =
       Platform.environment['ANDROID_HOME'] ??
       Platform.environment['ANDROID_SDK_ROOT'] ??
       '${Platform.environment['LOCALAPPDATA']}\\Android\\Sdk';
-  return Uri.file(
-    '$sdk\\ndk\\$_ndkVersion\\toolchains\\llvm\\prebuilt\\windows-x86_64'
-    r'\bin\libclang.dll',
-  );
+  return '$sdk\\ndk\\$_ndkVersion\\toolchains\\llvm\\prebuilt\\windows-x86_64';
 }

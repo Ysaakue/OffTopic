@@ -40,6 +40,10 @@ abstract final class AppTheme {
         foregroundColor: AppColors.onSurface,
       ),
       materialTapTargetSize: MaterialTapTargetSize.padded,
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.primary,
+        linearTrackColor: AppColors.meterTrack,
+      ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: _minButtonSize,

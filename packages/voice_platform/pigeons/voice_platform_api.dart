@@ -49,6 +49,7 @@ class RoomConfigMessage {
     required this.controlPort,
     required this.audioPort,
     required this.bitrateBps,
+    required this.echoMode,
     this.hostIp,
   });
 
@@ -60,6 +61,9 @@ class RoomConfigMessage {
   int controlPort;
   int audioPort;
   int bitrateBps;
+
+  /// Host only: return every audio packet to its sender (round-trip test).
+  bool echoMode;
 }
 
 class PlatformCapabilitiesMessage {
@@ -122,7 +126,7 @@ class PlatformStateMessage {
 abstract class VoicePlatformHostApi {
   PlatformInfoMessage getPlatformInfo();
 
-  /// Starts the foreground service that owns the room session.
+  /// Starts the room session (inside the foreground service from phase 4).
   @async
   void startRoom(RoomConfigMessage config);
 

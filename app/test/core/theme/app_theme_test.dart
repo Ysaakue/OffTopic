@@ -35,6 +35,14 @@ void main() {
     expect(contrast(AppColors.onError, AppColors.error), greaterThan(aaa / 2));
   });
 
+  test('meters show their empty part apart from the fill', () {
+    final meters = theme.progressIndicatorTheme;
+
+    expect(meters.color, AppColors.primary);
+    expect(meters.linearTrackColor, AppColors.meterTrack);
+    expect(meters.linearTrackColor, isNot(theme.colorScheme.secondary));
+  });
+
   test('every button type is at least 64 x 64 dp', () {
     const minimum = Size(
       AppDimensions.minTapTarget,

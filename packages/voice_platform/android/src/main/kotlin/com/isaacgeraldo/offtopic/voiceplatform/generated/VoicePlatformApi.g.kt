@@ -246,7 +246,9 @@ data class RoomConfigMessage (
   val displayName: String,
   val controlPort: Long,
   val audioPort: Long,
-  val bitrateBps: Long
+  val bitrateBps: Long,
+  /** Host only: return every audio packet to its sender (round-trip test). */
+  val echoMode: Boolean
 )
  {
   companion object {
@@ -257,7 +259,8 @@ data class RoomConfigMessage (
       val controlPort = pigeonVar_list[3] as Long
       val audioPort = pigeonVar_list[4] as Long
       val bitrateBps = pigeonVar_list[5] as Long
-      return RoomConfigMessage(role, hostIp, displayName, controlPort, audioPort, bitrateBps)
+      val echoMode = pigeonVar_list[6] as Boolean
+      return RoomConfigMessage(role, hostIp, displayName, controlPort, audioPort, bitrateBps, echoMode)
     }
   }
   fun toList(): List<Any?> {
@@ -268,6 +271,7 @@ data class RoomConfigMessage (
       controlPort,
       audioPort,
       bitrateBps,
+      echoMode,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -278,7 +282,7 @@ data class RoomConfigMessage (
       return true
     }
     val other = other as RoomConfigMessage
-    return VoicePlatformApiPigeonUtils.deepEquals(this.role, other.role) && VoicePlatformApiPigeonUtils.deepEquals(this.hostIp, other.hostIp) && VoicePlatformApiPigeonUtils.deepEquals(this.displayName, other.displayName) && VoicePlatformApiPigeonUtils.deepEquals(this.controlPort, other.controlPort) && VoicePlatformApiPigeonUtils.deepEquals(this.audioPort, other.audioPort) && VoicePlatformApiPigeonUtils.deepEquals(this.bitrateBps, other.bitrateBps)
+    return VoicePlatformApiPigeonUtils.deepEquals(this.role, other.role) && VoicePlatformApiPigeonUtils.deepEquals(this.hostIp, other.hostIp) && VoicePlatformApiPigeonUtils.deepEquals(this.displayName, other.displayName) && VoicePlatformApiPigeonUtils.deepEquals(this.controlPort, other.controlPort) && VoicePlatformApiPigeonUtils.deepEquals(this.audioPort, other.audioPort) && VoicePlatformApiPigeonUtils.deepEquals(this.bitrateBps, other.bitrateBps) && VoicePlatformApiPigeonUtils.deepEquals(this.echoMode, other.echoMode)
   }
 
   override fun hashCode(): Int {
@@ -289,10 +293,11 @@ data class RoomConfigMessage (
     result = 31 * result + VoicePlatformApiPigeonUtils.deepHash(this.controlPort)
     result = 31 * result + VoicePlatformApiPigeonUtils.deepHash(this.audioPort)
     result = 31 * result + VoicePlatformApiPigeonUtils.deepHash(this.bitrateBps)
+    result = 31 * result + VoicePlatformApiPigeonUtils.deepHash(this.echoMode)
     return result
   }
   override fun toString(): String {
-    return "RoomConfigMessage(role=$role, hostIp=$hostIp, displayName=$displayName, controlPort=$controlPort, audioPort=$audioPort, bitrateBps=$bitrateBps)"
+    return "RoomConfigMessage(role=$role, hostIp=$hostIp, displayName=$displayName, controlPort=$controlPort, audioPort=$audioPort, bitrateBps=$bitrateBps, echoMode=$echoMode)"
   }
 }
 
@@ -581,7 +586,7 @@ val VoicePlatformApiPigeonMethodCodec = StandardMethodCodec(VoicePlatformApiPige
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface VoicePlatformHostApi {
   fun getPlatformInfo(): PlatformInfoMessage
-  /** Starts the foreground service that owns the room session. */
+  /** Starts the room session (inside the foreground service from phase 4). */
   suspend fun startRoom(config: RoomConfigMessage)
   suspend fun stopRoom()
   fun setMute(muted: Boolean)

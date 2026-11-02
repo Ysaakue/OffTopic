@@ -120,6 +120,7 @@ class RoomConfigMessage {
     required this.controlPort,
     required this.audioPort,
     required this.bitrateBps,
+    required this.echoMode,
   });
 
   RoomRoleMessage role;
@@ -135,6 +136,9 @@ class RoomConfigMessage {
 
   int bitrateBps;
 
+  /// Host only: return every audio packet to its sender (round-trip test).
+  bool echoMode;
+
   List<Object?> _toList() {
     return <Object?>[
       role,
@@ -143,6 +147,7 @@ class RoomConfigMessage {
       controlPort,
       audioPort,
       bitrateBps,
+      echoMode,
     ];
   }
 
@@ -159,6 +164,7 @@ class RoomConfigMessage {
       controlPort: result[3]! as int,
       audioPort: result[4]! as int,
       bitrateBps: result[5]! as int,
+      echoMode: result[6]! as bool,
     );
   }
 
@@ -176,7 +182,8 @@ class RoomConfigMessage {
         _deepEquals(displayName, other.displayName) &&
         _deepEquals(controlPort, other.controlPort) &&
         _deepEquals(audioPort, other.audioPort) &&
-        _deepEquals(bitrateBps, other.bitrateBps);
+        _deepEquals(bitrateBps, other.bitrateBps) &&
+        _deepEquals(echoMode, other.echoMode);
   }
 
   @override
@@ -185,7 +192,7 @@ class RoomConfigMessage {
 
   @override
   String toString() {
-    return 'RoomConfigMessage(role: $role, hostIp: $hostIp, displayName: $displayName, controlPort: $controlPort, audioPort: $audioPort, bitrateBps: $bitrateBps)';
+    return 'RoomConfigMessage(role: $role, hostIp: $hostIp, displayName: $displayName, controlPort: $controlPort, audioPort: $audioPort, bitrateBps: $bitrateBps, echoMode: $echoMode)';
   }
 }
 
@@ -536,7 +543,7 @@ class VoicePlatformHostApi {
     return pigeonVar_replyValue! as PlatformInfoMessage;
   }
 
-  /// Starts the foreground service that owns the room session.
+  /// Starts the room session (inside the foreground service from phase 4).
   Future<void> startRoom(RoomConfigMessage config) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.voice_platform.VoicePlatformHostApi.startRoom$pigeonVar_messageChannelSuffix';

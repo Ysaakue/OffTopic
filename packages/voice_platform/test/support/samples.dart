@@ -55,4 +55,14 @@ RoomConfigMessage sampleClientConfigMessage() => RoomConfigMessage(
   controlPort: 47800,
   audioPort: 47801,
   bitrateBps: 24000,
+  echoMode: false,
+);
+
+const sampleEchoHostConfig = RoomConfig(
+  role: RoomRole.host,
+  displayName: 'Bia',
+  controlPort: 47800,
+  audioPort: 47801,
+  bitrateBps: 24000,
+  echoMode: true,
 );

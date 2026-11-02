@@ -4,7 +4,11 @@
 /// sends commands to the core.
 library;
 
+export 'src/event_decoder.dart';
 export 'src/ffi_voice_core_client.dart' show FfiVoiceCoreClient;
+export 'src/models/core_defaults.dart';
+export 'src/models/core_event.dart';
+export 'src/models/core_stats.dart';
 export 'src/voice_core_client.dart';
 export 'src/voice_core_exception.dart';
 export 'src/voice_core_library_loader.dart';

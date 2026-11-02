@@ -26,6 +26,8 @@ void main() {
       expect(sampleClientConfig, same);
       expect(sampleClientConfig.hashCode, same.hashCode);
       expect(sampleClientConfig, isNot(otherPort));
+      expect(sampleClientConfig.echoMode, isFalse);
+      expect(sampleEchoHostConfig, isNot(sampleHostConfig));
     });
 
     test('PlatformInfo compares nested capabilities', () {

@@ -58,6 +58,7 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "VC_SANITIZER": "address",
         "VC_BUILD_TESTS": "OFF",
+        "VC_BUILD_TOOLS": "OFF",
         "VC_BUILD_FUZZERS": "ON"
       }
     },

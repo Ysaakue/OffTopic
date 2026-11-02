@@ -55,5 +55,201 @@
   "retryButton": "Try again",
   "@retryButton": {
     "description": "Button that repeats a failed operation."
+  },
+  "homeAudioTestButton": "Audio test",
+  "@homeAudioTestButton": {
+    "description": "Home button that opens the phase 1 audio test."
+  },
+  "audioTestTitle": "Audio test",
+  "@audioTestTitle": {
+    "description": "Title of the two-phone audio test screen."
+  },
+  "audioTestRoleHost": "Host",
+  "@audioTestRoleHost": {
+    "description": "Segment: this phone hosts the test."
+  },
+  "audioTestRoleJoin": "Join",
+  "@audioTestRoleJoin": {
+    "description": "Segment: this phone joins a host."
+  },
+  "audioTestHostIpLabel": "Host IP address",
+  "@audioTestHostIpLabel": {
+    "description": "Label of the host address field."
+  },
+  "audioTestInvalidHost": "Type the host's IPv4 address, e.g. 192.168.43.1.",
+  "@audioTestInvalidHost": {
+    "description": "Error under the host address field."
+  },
+  "audioTestEchoMode": "Echo mode",
+  "@audioTestEchoMode": {
+    "description": "Switch title: the host returns the caller's own voice."
+  },
+  "audioTestEchoModeHint": "Returns your voice to the other phone, to measure the delay.",
+  "@audioTestEchoModeHint": {
+    "description": "Switch subtitle explaining echo mode."
+  },
+  "audioTestDefaultName": "Rider",
+  "@audioTestDefaultName": {
+    "description": "Name sent to the core until the name screen exists (phase 3)."
+  },
+  "audioTestStart": "Start",
+  "@audioTestStart": {
+    "description": "Button that starts the audio test."
+  },
+  "audioTestStop": "Stop",
+  "@audioTestStop": {
+    "description": "Button that stops the audio test."
+  },
+  "audioTestStatusIdle": "Stopped",
+  "@audioTestStatusIdle": {
+    "description": "Status: no test running."
+  },
+  "audioTestStatusStarting": "Starting…",
+  "@audioTestStatusStarting": {
+    "description": "Status: the test is starting."
+  },
+  "audioTestStatusActive": "Running",
+  "@audioTestStatusActive": {
+    "description": "Status: the test is running."
+  },
+  "audioTestStatusStopping": "Stopping…",
+  "@audioTestStatusStopping": {
+    "description": "Status: the test is stopping."
+  },
+  "audioTestLinkWaiting": "Waiting for the other phone…",
+  "@audioTestLinkWaiting": {
+    "description": "No packet from the other phone yet."
+  },
+  "audioTestLinkUp": "Connected to {peer}",
+  "@audioTestLinkUp": {
+    "description": "The other phone is reachable.",
+    "placeholders": {
+      "peer": {
+        "type": "String"
+      }
+    }
+  },
+  "audioTestLinkLost": "Connection lost with {peer}",
+  "@audioTestLinkLost": {
+    "description": "The other phone stopped answering.",
+    "placeholders": {
+      "peer": {
+        "type": "String"
+      }
+    }
+  },
+  "audioTestStatLoss": "Loss",
+  "@audioTestStatLoss": {
+    "description": "Statistic: packet loss."
+  },
+  "audioTestStatJitter": "Jitter",
+  "@audioTestStatJitter": {
+    "description": "Statistic: network jitter."
+  },
+  "audioTestStatBuffer": "Jitter buffer",
+  "@audioTestStatBuffer": {
+    "description": "Statistic: buffered audio and its target."
+  },
+  "audioTestStatRtt": "Round trip",
+  "@audioTestStatRtt": {
+    "description": "Statistic: keepalive round-trip time."
+  },
+  "audioTestStatInput": "Microphone",
+  "@audioTestStatInput": {
+    "description": "Statistic: microphone level."
+  },
+  "audioTestStatPackets": "Sent / received",
+  "@audioTestStatPackets": {
+    "description": "Statistic: packets sent and received."
+  },
+  "audioTestStatLostLate": "Lost / late",
+  "@audioTestStatLostLate": {
+    "description": "Statistic: packets lost and late."
+  },
+  "audioTestStatRecovered": "FEC / concealed",
+  "@audioTestStatRecovered": {
+    "description": "Statistic: frames rebuilt by FEC and concealed."
+  },
+  "audioTestStatUnderruns": "Speaker underruns",
+  "@audioTestStatUnderruns": {
+    "description": "Statistic: times the speaker ran out of audio."
+  },
+  "audioTestValuePercent": "{value} %",
+  "@audioTestValuePercent": {
+    "description": "A percentage value.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "audioTestValueMs": "{value} ms",
+  "@audioTestValueMs": {
+    "description": "A duration in milliseconds.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "audioTestValueBuffer": "{depth} ms (target {target} ms)",
+  "@audioTestValueBuffer": {
+    "description": "Buffered audio and its target.",
+    "placeholders": {
+      "depth": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "audioTestValuePair": "{first} / {second}",
+  "@audioTestValuePair": {
+    "description": "Two counters side by side.",
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "audioTestValueUnknown": "—",
+  "@audioTestValueUnknown": {
+    "description": "A value not measured yet."
+  },
+  "audioTestErrorAlreadyActive": "A test is already running.",
+  "@audioTestErrorAlreadyActive": {
+    "description": "Error: a room is already running."
+  },
+  "audioTestErrorInvalidConfig": "The voice core rejected the settings.",
+  "@audioTestErrorInvalidConfig": {
+    "description": "Error: invalid configuration."
+  },
+  "audioTestErrorAudioDevice": "The microphone or the speaker could not be opened.",
+  "@audioTestErrorAudioDevice": {
+    "description": "Error: audio device."
+  },
+  "audioTestErrorNetwork": "The network could not be opened. Check the Wi-Fi.",
+  "@audioTestErrorNetwork": {
+    "description": "Error: network socket."
+  },
+  "audioTestErrorUnavailable": "The voice core is not available.",
+  "@audioTestErrorUnavailable": {
+    "description": "Error: any other failure."
+  },
+  "permissionDeniedTitle": "Permission needed",
+  "@permissionDeniedTitle": {
+    "description": "Title when a room permission was refused."
+  },
+  "permissionDeniedBody": "OffTopic needs the microphone and, from Android 17, access to devices on the local network to talk over the hotspot.",
+  "@permissionDeniedBody": {
+    "description": "Why the permissions are needed."
+  },
+  "permissionOpenSettings": "Open settings",
+  "@permissionOpenSettings": {
+    "description": "Button that opens the app settings."
   }
 }

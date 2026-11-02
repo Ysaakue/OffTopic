@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:offtopic/core/routing/app_routes.dart';
 import 'package:offtopic/core/theme/app_dimensions.dart';
 import 'package:offtopic/features/home/home_providers.dart';
 import 'package:offtopic/features/home/presentation/widgets/app_info_panel.dart';
 import 'package:offtopic/features/home/presentation/widgets/home_error_view.dart';
 import 'package:offtopic/l10n/generated/app_localizations.dart';
 
-/// Start screen. In phase 0 it proves the Dart <-> C++ and Dart <-> Kotlin
-/// paths by showing the core version and the phone summary.
+/// Start screen. It shows the core version and the phone summary (proving
+/// the Dart <-> C++ and Dart <-> Kotlin paths) and opens the phase 1 audio
+/// test until the room screens arrive in phase 3.
 class HomeScreen extends ConsumerWidget {
   const new({super.key});
 
@@ -39,6 +42,12 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   _ => _Loading(label: l10n.homeLoading),
                 },
+                const SizedBox(height: AppDimensions.spacingLarge),
+                FilledButton(
+                  key: const Key('home.audioTest'),
+                  onPressed: () => context.push(AppRoutes.audioTest),
+                  child: Text(l10n.homeAudioTestButton),
+                ),
               ],
             ),
           ),

@@ -29,3 +29,44 @@ final class PlatformFailure extends AppFailure {
   @override
   List<Object?> get props => [code, message];
 }
+
+/// A runtime permission the room needs was not granted.
+final class PermissionFailure extends AppFailure {
+  const new({required this.permanentlyDenied})
+    : super('A required permission was not granted.');
+
+  /// The system will not ask again; only the app settings can grant it.
+  final bool permanentlyDenied;
+
+  @override
+  List<Object?> get props => [message, permanentlyDenied];
+}
+
+/// Why starting or controlling the room failed.
+enum RoomFailureReason {
+  /// A room is already running.
+  alreadyActive,
+
+  /// The voice core rejected the configuration.
+  invalidConfig,
+
+  /// The microphone or the speaker could not be opened.
+  audioDevice,
+
+  /// The network socket could not be opened.
+  network,
+
+  /// The platform or the core failed in another way.
+  unavailable,
+}
+
+/// Starting, stopping or controlling the room failed.
+final class RoomFailure extends AppFailure {
+  const new(this.reason, super.message);
+
+  /// What went wrong, for the message shown to the rider.
+  final RoomFailureReason reason;
+
+  @override
+  List<Object?> get props => [reason, message];
+}

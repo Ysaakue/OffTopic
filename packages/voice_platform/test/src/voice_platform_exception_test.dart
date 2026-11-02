@@ -36,6 +36,12 @@ void main() {
     test('shares the error codes used by the Kotlin host', () {
       expect(VoicePlatformErrorCode.notImplemented, 'not_implemented');
       expect(VoicePlatformErrorCode.channelError, 'channel-error');
+      expect(VoicePlatformErrorCode.roomAlreadyActive, 'room_already_active');
+      expect(VoicePlatformErrorCode.noActiveRoom, 'no_active_room');
+      expect(VoicePlatformErrorCode.invalidConfig, 'invalid_config');
+      expect(VoicePlatformErrorCode.audioDeviceError, 'audio_device_error');
+      expect(VoicePlatformErrorCode.networkError, 'network_error');
+      expect(VoicePlatformErrorCode.coreError, 'core_error');
     });
   });
 }

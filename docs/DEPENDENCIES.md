@@ -44,8 +44,8 @@ Desktop build trees live in `~/.cache/offtopic/voice_core/<preset>` (fast ext4).
 | Library | Tag | Phase | Status |
 | --- | --- | --- | --- |
 | googletest (+ gmock) | `v1.18.0` | 0 | added |
-| miniaudio | `0.11.25` | 1 | planned |
-| opus | `v1.6.1` | 1 | planned |
+| miniaudio | `0.11.26` | 1 | added (low-level device API only: `MA_NO_ENGINE` and friends) |
+| opus | `v1.6.1` | 1 | added (DRED/OSCE off: they need downloaded model files) |
 | nlohmann/json | `v3.12.0` | 3 | planned |
 | webrtc-audio-processing | `v2.1` | 2 | planned (Meson upstream; needs a CMake wrapper) |
 | abseil-cpp | `20260817.0` | 2 | planned (fallback: newest LTS that builds with webrtc-apm 2.1) |
@@ -67,9 +67,12 @@ Nothing is downloaded during the build. After cloning: `git submodule update --i
 | `very_good_analysis` (dev) | ^11.0.0 | workspace root |
 | `mocktail` (dev) | ^1.0.5 | all |
 | `fake_async` (dev) | ^1.3.3 | app |
+| `permission_handler` | ^13.0.2 | app (Android 14.1.1 implementation: `Permission.accessLocalNetwork` for API 37) |
+| `permission_handler_platform_interface` (dev) | ^4.4.1 | app (fake platform in tests) |
+| `plugin_platform_interface` (dev) | ^2.1.8 | app (`MockPlatformInterfaceMixin`) |
 
-Added in later phases: `shared_preferences` ^2.5.6, `permission_handler` ^13.0.2,
-`mobile_scanner` ^7.4.2, `qr` ^4.0.1 (replaces the unmaintained `qr_flutter`).
+Added in later phases: `shared_preferences` ^2.5.6, `mobile_scanner` ^7.4.2,
+`qr` ^4.0.1 (replaces the unmaintained `qr_flutter`).
 
 ## Kotlin / Gradle (`packages/voice_platform/android`)
 

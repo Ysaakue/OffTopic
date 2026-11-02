@@ -33,4 +33,26 @@ void main() {
       expect(failure, isNot(const PlatformFailure(code: 'b', message: 'm')));
     });
   });
+
+  group('PermissionFailure', () {
+    test('says whether the system will ask again', () {
+      const failure = PermissionFailure(permanentlyDenied: true);
+
+      expect(failure.permanentlyDenied, isTrue);
+      expect(failure, isNot(const PermissionFailure(permanentlyDenied: false)));
+    });
+  });
+
+  group('RoomFailure', () {
+    test('keeps its reason and message', () {
+      const failure = RoomFailure(RoomFailureReason.network, 'no socket');
+
+      expect(failure.reason, RoomFailureReason.network);
+      expect(failure.message, 'no socket');
+      expect(
+        failure,
+        isNot(const RoomFailure(RoomFailureReason.audioDevice, 'no socket')),
+      );
+    });
+  });
 }

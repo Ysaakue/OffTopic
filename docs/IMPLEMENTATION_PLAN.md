@@ -402,6 +402,23 @@ Cada fase termina com o aceite da spec cumprido em aparelho real e um resumo de 
 5. `tools/loopback_sim` v1: duas sessões num processo, por localhost, com proxy de perda, jitter e reordenação configuráveis e `FakeAudioDevice` gerando pulsos para medir latência.
 - **Testes:** todos os itens da fase 1 do catálogo, com destaque para `JitterBuffer`, `SpscRingBuffer` (TSan), pipelines com zero alocação, `AudioPacket` com os vetores do `PROTOCOL.md`, fuzz do parser, `EventDecoder`, `StatsPoller` e `PermissionService` (`ACCESS_LOCAL_NETWORK`). `verify.ps1` verde.
 - **Aceite:** 10 min sem cortes, latência medida de até 150 ms e estatísticas na tela.
+- **Desvios registrados na implementação (01/11/2026):**
+  - miniaudio **0.11.26** (lançada em 31/10/2026), em vez da 0.11.25; Opus v1.6.1 sem DRED/OSCE, que exigiriam baixar modelos.
+  - O modo eco é o campo `echo_mode` da `vc_config` (vale para a sessão inteira), em vez de uma função `vc_set_echo_mode`.
+  - `vc_set_network_handle` fica para a fase 4, junto com o `WifiBinder`. A interface `INetworkBinder` e o `NoopNetworkBinder` já existem, e o spy confirma o vínculo de cada socket.
+  - Eventos da fase 1: `VC_EVENT_STATE_CHANGED` e `VC_EVENT_LINK_CHANGED`. A fase 3 acrescenta participantes e "falando".
+  - Os value objects `PortNumber` e `Bitrate` passam para a fase 2, com a tela de configurações. A fase 1 usa `HostAddress` e `DisplayName`, e portas e bitrate vêm de `vc_config_defaults` (uma só configuração).
+  - Um roteador de áudio mínimo entrou já na fase 1 (`AudioRouterFactory` → `CommunicationDeviceRouter`/`LegacySpeakerRouter`, fone com fio ou alto-falante, `MODE_IN_COMMUNICATION`). Motivo: com o uso `VOICE_COMMUNICATION`, o Android manda o som para o alto-falante de ouvido (earpiece), baixo demais para o teste. A fase 2 acrescenta o SCO a esses roteadores.
+  - O `loopback_sim` roda uma passagem curta (6 s, 5% de perda, jitter de 0 a 30 ms) dentro do `verify_core.sh`, como teste de ponta a ponta.
+  - Os testes do `VoiceEngine` usam as threads reais do motor, com espera limitada; é a única exceção à regra de "sem tempo real".
+  - A fila de reprodução (áudio já decodificado à espera do dispositivo) é adaptativa: mínimo de 20 ms (`playoutBufferMs`), crescendo até o maior volume que o dispositivo consumiu entre duas passadas do loop de mídia. Motivo, visto no emulador: o miniaudio em duplex sobre o AAudio enche um burst inteiro (até 100 ms) com vários callbacks seguidos. Num celular os bursts são de 5 a 20 ms, então a fila fica perto do mínimo. A latência real precisa ser medida no aceite.
+  - A ponte JNI registra só os métodos que o `NativeVoiceCore.kt` declara. Uma entrada a mais derrubava o processo na primeira execução no emulador; agora uma falha de registro vira erro para o Dart. Os testes instrumentados (fase 4) vão cobrir essa ponte.
+  - **Achados no celular real (Galaxy A54, Android 16, 01/11/2026):**
+    - O AAudio de baixa latência abria streams MMAP. Nesse modo, o cancelador de eco e o redutor de ruído do sistema não se aplicam.
+    - O Android aplica `setMode` e `setCommunicationDevice` de forma assíncrona, cerca de 250 ms depois. A rota chegava com o microfone já aberto e o desconectava no `requestStart` (`-899`).
+    - Correção: o dispositivo usa o caminho normal (perfil `conservative`), o `CommunicationDeviceRouter` espera a rota (até 1 s) e o `VoiceEngine` tenta iniciar o dispositivo mais uma vez.
+    - O APK release ganhou uma regra R8 (`consumer-rules.pro`) que preserva a classe JNI.
+  - **Aceite da fase 1:** confirmado pelo usuário em 02/11/2026, com o APK 0.1.1 em celulares reais.
 
 ### Fase 2: Bluetooth e processamento
 1. **Spike com prazo fixo:** compilar `webrtc-audio-processing` e `abseil-cpp` por CMake no NDK e no WSL. O projeto upstream usa Meson, então vai ser preciso um `cmake/webrtc_apm.cmake` próprio. Se não for viável, **parar e apresentar a alternativa** (por exemplo SpeexDSP para ruído, AGC e VAD), como manda a spec.

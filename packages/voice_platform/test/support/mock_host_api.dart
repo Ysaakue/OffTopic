@@ -14,6 +14,7 @@ void registerHostApiFallbacks() {
       controlPort: 1,
       audioPort: 1,
       bitrateBps: 1,
+      echoMode: false,
     ),
   );
 }

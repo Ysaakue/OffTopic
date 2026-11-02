@@ -11,6 +11,7 @@ final class RoomConfig extends Equatable {
     required this.audioPort,
     required this.bitrateBps,
     this.hostIp,
+    this.echoMode = false,
   });
 
   /// Whether this phone hosts or joins the room.
@@ -31,6 +32,10 @@ final class RoomConfig extends Equatable {
   /// Opus bitrate in bits per second.
   final int bitrateBps;
 
+  /// Host only: return every audio packet to its sender, to measure the
+  /// audio round trip.
+  final bool echoMode;
+
   @override
   List<Object?> get props => [
     role,
@@ -39,5 +44,6 @@ final class RoomConfig extends Equatable {
     controlPort,
     audioPort,
     bitrateBps,
+    echoMode,
   ];
 }

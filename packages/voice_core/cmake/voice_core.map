@@ -1,0 +1,8 @@
+/* Linker version script: libvoice_core.so exports the C API and the JNI hook only. */
+{
+  global:
+    vc_*;
+    JNI_OnLoad;
+  local:
+    *;
+};

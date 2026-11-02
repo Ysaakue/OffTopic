@@ -4,6 +4,7 @@
 #   2. AddressSanitizer + UBSan and ThreadSanitizer builds + tests (clang)
 #   3. coverage build + tests, gated by gcovr
 #   4. a short libFuzzer campaign for every registered fuzz target
+#   5. a short loopback_sim run (lossy localhost link) as an end-to-end smoke test
 #
 # Usage: tools/verify_core.sh            (from the repository root, inside WSL)
 # Env:   VC_FUZZ_SECONDS  seconds per fuzz target (default 30)
@@ -94,9 +95,16 @@ run_fuzzers() {
   done
 }
 
+run_loopback() {
+  step "[desktop-debug] loopback_sim: 6 s, 5 % loss, 0..30 ms jitter, 2 % reorder"
+  "$build_root/desktop-debug/loopback_sim/loopback_sim" \
+    --seconds=6 --loss=0.05 --jitter-ms=30 --reorder=0.02 --seed=7
+}
+
 main() {
   require_tools
   run_preset desktop-debug
+  run_loopback
   run_preset desktop-asan
   run_preset desktop-tsan
   run_coverage

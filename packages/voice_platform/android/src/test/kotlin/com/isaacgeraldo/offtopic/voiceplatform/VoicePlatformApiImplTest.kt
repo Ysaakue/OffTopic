@@ -1,11 +1,18 @@
 package com.isaacgeraldo.offtopic.voiceplatform
 
+import com.isaacgeraldo.offtopic.voiceplatform.audio.CommunicationDeviceRouter
+import com.isaacgeraldo.offtopic.voiceplatform.audio.FakeAudioManagerFacade
+import com.isaacgeraldo.offtopic.voiceplatform.core.CoreResult
+import com.isaacgeraldo.offtopic.voiceplatform.core.FakeVoiceCoreBridge
 import com.isaacgeraldo.offtopic.voiceplatform.generated.FlutterError
 import com.isaacgeraldo.offtopic.voiceplatform.generated.RoomConfigMessage
 import com.isaacgeraldo.offtopic.voiceplatform.generated.RoomRoleMessage
+import com.isaacgeraldo.offtopic.voiceplatform.room.RoomController
 import com.isaacgeraldo.offtopic.voiceplatform.system.DeviceInfoProvider
 import com.isaacgeraldo.offtopic.voiceplatform.system.KeepScreenOnController
 import com.isaacgeraldo.offtopic.voiceplatform.system.SdkLevel
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -14,24 +21,30 @@ import kotlin.test.assertNull
 
 class VoicePlatformApiImplTest {
     private val keepScreenOn = RecordingKeepScreenOnController()
-    private val api =
+    private val core = FakeVoiceCoreBridge()
+    private val room = RoomController(core = { core }, router = CommunicationDeviceRouter(FakeAudioManagerFacade()))
+
+    private fun api(dispatcher: TestDispatcher) =
         VoicePlatformApiImpl(
             sdkLevel = SdkLevel(34),
             deviceInfo = FakeDeviceInfoProvider(),
             keepScreenOn = keepScreenOn,
+            room = room,
+            roomDispatcher = dispatcher,
         )
 
     @Test
-    fun `platform info describes the Android device`() {
-        val info = api.getPlatformInfo()
+    fun `platform info describes the Android device`() =
+        runTest {
+            val info = api(StandardTestDispatcher(testScheduler)).getPlatformInfo()
 
-        assertEquals("android", info.osName)
-        assertEquals("14", info.osVersion)
-        assertEquals(34L, info.apiLevel)
-        assertEquals("samsung", info.manufacturer)
-        assertEquals("SM-S921B", info.model)
-        assertEquals(VoicePlatformApiImpl.ANDROID_CAPABILITIES, info.capabilities)
-    }
+            assertEquals("android", info.osName)
+            assertEquals("14", info.osVersion)
+            assertEquals(34L, info.apiLevel)
+            assertEquals("samsung", info.manufacturer)
+            assertEquals("SM-S921B", info.model)
+            assertEquals(VoicePlatformApiImpl.ANDROID_CAPABILITIES, info.capabilities)
+        }
 
     @Test
     fun `Android can host rooms and offers every platform helper`() {
@@ -44,61 +57,85 @@ class VoicePlatformApiImplTest {
     }
 
     @Test
-    fun `startRoom is not implemented yet`() =
+    fun `startRoom starts the room and getActiveRoom reports it`() =
         runTest {
-            val error = assertFailsWith<FlutterError> { api.startRoom(sampleConfig()) }
+            val api = api(StandardTestDispatcher(testScheduler))
 
-            assertEquals(PlatformErrorCodes.NOT_IMPLEMENTED, error.code)
-            assertEquals("startRoom is not implemented yet on Android.", error.message)
+            api.startRoom(sampleConfig())
+
+            assertEquals(sampleConfig(), api.getActiveRoom()?.config)
+            assertEquals(false, api.getActiveRoom()?.muted)
         }
 
     @Test
-    fun `stopRoom is not implemented yet`() =
+    fun `startRoom reports core failures as Flutter errors`() =
         runTest {
-            assertNotImplemented { api.stopRoom() }
+            core.startResult = CoreResult.NETWORK
+            val api = api(StandardTestDispatcher(testScheduler))
+
+            val error = assertFailsWith<FlutterError> { api.startRoom(sampleConfig()) }
+
+            assertEquals(PlatformErrorCodes.NETWORK_ERROR, error.code)
+            assertNull(api.getActiveRoom())
+        }
+
+    @Test
+    fun `stopRoom ends the room`() =
+        runTest {
+            val api = api(StandardTestDispatcher(testScheduler))
+            api.startRoom(sampleConfig())
+
+            api.stopRoom()
+
+            assertNull(api.getActiveRoom())
+        }
+
+    @Test
+    fun `setMute reaches the core`() =
+        runTest {
+            val api = api(StandardTestDispatcher(testScheduler))
+            api.startRoom(sampleConfig())
+
+            api.setMute(true)
+
+            assertEquals(listOf(true), core.mutes)
+            assertEquals(true, api.getActiveRoom()?.muted)
+        }
+
+    @Test
+    fun `there is no active room at first`() =
+        runTest {
+            assertNull(api(StandardTestDispatcher(testScheduler)).getActiveRoom())
         }
 
     @Test
     fun `requestBatteryExemption is not implemented yet`() =
         runTest {
-            assertNotImplemented { api.requestBatteryExemption() }
-        }
+            val api = api(StandardTestDispatcher(testScheduler))
+            val error = assertFailsWith<FlutterError> { api.requestBatteryExemption() }
 
-    @Test
-    fun `setMute is not implemented yet`() =
-        runTest {
-            assertNotImplemented { api.setMute(true) }
+            assertEquals(PlatformErrorCodes.NOT_IMPLEMENTED, error.code)
         }
 
     @Test
     fun `openHotspotSettings is not implemented yet`() =
         runTest {
-            assertNotImplemented { api.openHotspotSettings() }
+            val api = api(StandardTestDispatcher(testScheduler))
+            val error = assertFailsWith<FlutterError> { api.openHotspotSettings() }
+
+            assertEquals(PlatformErrorCodes.NOT_IMPLEMENTED, error.code)
+            assertEquals("openHotspotSettings is not implemented yet on Android.", error.message)
         }
 
     @Test
-    fun `setKeepScreenOn delegates to the controller`() {
-        api.setKeepScreenOn(true)
-        api.setKeepScreenOn(false)
+    fun `setKeepScreenOn delegates to the controller`() =
+        runTest {
+            val api = api(StandardTestDispatcher(testScheduler))
+            api.setKeepScreenOn(true)
+            api.setKeepScreenOn(false)
 
-        assertEquals(listOf(true, false), keepScreenOn.calls)
-    }
-
-    @Test
-    fun `there is no active room before the service exists`() {
-        assertNull(api.getActiveRoom())
-    }
-
-    private suspend fun assertNotImplemented(block: suspend () -> Unit) {
-        val error =
-            try {
-                block()
-                null
-            } catch (expected: FlutterError) {
-                expected
-            }
-        assertEquals(PlatformErrorCodes.NOT_IMPLEMENTED, error?.code)
-    }
+            assertEquals(listOf(true, false), keepScreenOn.calls)
+        }
 
     private fun sampleConfig() =
         RoomConfigMessage(
@@ -108,6 +145,7 @@ class VoicePlatformApiImplTest {
             controlPort = 47800,
             audioPort = 47801,
             bitrateBps = 24000,
+            echoMode = false,
         )
 
     private class FakeDeviceInfoProvider : DeviceInfoProvider {

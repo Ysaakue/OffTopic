@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:offtopic/app.dart';
 import 'package:offtopic/core/di/infrastructure_providers.dart';
 import 'package:offtopic/features/home/presentation/screens/home_screen.dart';
+import 'package:offtopic/features/room/presentation/screens/audio_test_screen.dart';
 import 'package:voice_core/testing.dart';
 import 'package:voice_platform/testing.dart';
 
@@ -68,5 +69,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Voice core 0.1.0'), findsOneWidget);
+  });
+
+  testWidgets('opens the audio test from the home screen', (tester) async {
+    await pumpApp(tester);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('home.audioTest')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AudioTestScreen), findsOneWidget);
   });
 }

@@ -15,6 +15,8 @@ function(vc_add_fuzzer name source)
   set_property(GLOBAL APPEND PROPERTY VC_FUZZ_TARGETS ${name})
 endfunction()
 
+vc_add_fuzzer(audio_packet_fuzzer audio_packet_fuzzer.cpp)
+
 # Fuzz targets are registered above this line with vc_add_fuzzer().
 
 # tools/verify_core.sh reads this list to know which binaries to run.

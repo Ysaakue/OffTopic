@@ -1,7 +1,7 @@
 name: offtopic
 description: Hands-free group voice room for motorcycle riders over a local Wi-Fi hotspot.
 publish_to: none
-version: 0.1.0+1
+version: 0.1.1+2
 
 environment:
   sdk: ^3.13.7
@@ -17,6 +17,7 @@ dependencies:
   flutter_riverpod: ^3.4.3
   go_router: ^18.1.2
   intl: any
+  permission_handler: ^13.0.2
   voice_core:
     path: ../packages/voice_core
   voice_platform:
@@ -27,6 +28,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   mocktail: ^1.0.5
+  permission_handler_platform_interface: ^4.4.1
+  plugin_platform_interface: ^2.1.8
 
 flutter:
   generate: true
