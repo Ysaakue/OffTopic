@@ -66,7 +66,7 @@ PeerSession::PeerSession(const CoreConfig& config, IDatagramSocket& socket, IEve
 
 // --- Sending
 
-void PeerSession::onCaptureFrame(const int16_t* pcm) noexcept {
+void PeerSession::onCaptureFrame(const int16_t* pcm, bool transmit) noexcept {
   int peak = 0;
   for (int i = 0; i < config_.frameSamples; ++i) {
     peak = std::max(peak, std::abs(static_cast<int>(pcm[i])));
@@ -75,7 +75,7 @@ void PeerSession::onCaptureFrame(const int16_t* pcm) noexcept {
 
   const uint32_t frameTimestamp = timestamp_;
   timestamp_ += static_cast<uint32_t>(config_.frameSamples);
-  if (!peer_ || config_.echoMode || muted_) {
+  if (!peer_ || config_.echoMode || !transmit) {
     inGap_ = true;
     return;
   }

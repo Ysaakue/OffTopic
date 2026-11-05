@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:voice_platform/src/models/room_role.dart';
+import 'package:voice_platform/src/models/talk_mode.dart';
+import 'package:voice_platform/src/models/vad_sensitivity.dart';
 
 /// Parameters the platform service needs to start a room.
 final class RoomConfig extends Equatable {
@@ -12,6 +14,8 @@ final class RoomConfig extends Equatable {
     required this.bitrateBps,
     this.hostIp,
     this.echoMode = false,
+    this.talkMode = TalkMode.voice,
+    this.vadSensitivity = VadSensitivity.medium,
   });
 
   /// Whether this phone hosts or joins the room.
@@ -36,6 +40,12 @@ final class RoomConfig extends Equatable {
   /// audio round trip.
   final bool echoMode;
 
+  /// How the microphone opens when the room starts.
+  final TalkMode talkMode;
+
+  /// The voice detector's sensitivity when the room starts.
+  final VadSensitivity vadSensitivity;
+
   @override
   List<Object?> get props => [
     role,
@@ -45,5 +55,7 @@ final class RoomConfig extends Equatable {
     audioPort,
     bitrateBps,
     echoMode,
+    talkMode,
+    vadSensitivity,
   ];
 }

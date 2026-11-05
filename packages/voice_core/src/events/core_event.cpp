@@ -6,6 +6,7 @@ namespace {
 // Must match vc_event_type in voice_core.h (checked in voice_core_api.cpp).
 constexpr int32_t kStateChangedType = 1;
 constexpr int32_t kLinkChangedType = 2;
+constexpr int32_t kTalkingChangedType = 3;
 
 const char* stateName(EngineState state) noexcept {
   switch (state) {
@@ -24,6 +25,9 @@ struct TypeVisitor {
     return kStateChangedType;
   }
   int32_t operator()(const LinkChangedEvent& /*event*/) const noexcept { return kLinkChangedType; }
+  int32_t operator()(const TalkingChangedEvent& /*event*/) const noexcept {
+    return kTalkingChangedType;
+  }
 };
 
 struct JsonVisitor {
@@ -37,6 +41,9 @@ struct JsonVisitor {
   std::string operator()(const LinkChangedEvent& event) const {
     return std::string(R"({"up":)") + (event.up ? "true" : "false") + R"(,"peer":")" +
            formatEndpoint(event.peer) + R"("})";
+  }
+  std::string operator()(const TalkingChangedEvent& event) const {
+    return std::string(R"({"talking":)") + (event.talking ? "true" : "false") + '}';
   }
 };
 

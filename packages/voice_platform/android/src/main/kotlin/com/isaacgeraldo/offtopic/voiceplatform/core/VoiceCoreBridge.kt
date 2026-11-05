@@ -29,7 +29,22 @@ internal data class CoreSessionConfig(
     val displayName: String,
     val bitrateBps: Int,
     val echoMode: Boolean,
+    val talkMode: Int,
+    val vadSensitivity: Int,
 )
+
+/** vc_talk_mode values. */
+internal object CoreTalkMode {
+    const val VOICE = 0
+    const val PUSH_TO_TALK = 1
+}
+
+/** vc_vad_sensitivity values. */
+internal object CoreVadSensitivity {
+    const val LOW = 0
+    const val MEDIUM = 1
+    const val HIGH = 2
+}
 
 /** vc_role values. */
 internal object CoreRole {

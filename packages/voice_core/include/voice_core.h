@@ -33,6 +33,25 @@ typedef enum vc_result {
 
 typedef enum vc_role { VC_ROLE_CLIENT = 0, VC_ROLE_HOST = 1 } vc_role;
 
+/// Strength of the microphone noise suppressor.
+typedef enum vc_noise_suppression {
+  VC_NOISE_SUPPRESSION_OFF = 0,
+  VC_NOISE_SUPPRESSION_LOW = 1,
+  VC_NOISE_SUPPRESSION_MODERATE = 2,
+  VC_NOISE_SUPPRESSION_HIGH = 3,
+  VC_NOISE_SUPPRESSION_VERY_HIGH = 4,
+} vc_noise_suppression;
+
+/// Voice: the voice detector opens the microphone. Push to talk: only while held.
+typedef enum vc_talk_mode { VC_TALK_MODE_VOICE = 0, VC_TALK_MODE_PUSH_TO_TALK = 1 } vc_talk_mode;
+
+/// How easily the voice detector opens the microphone.
+typedef enum vc_vad_sensitivity {
+  VC_VAD_SENSITIVITY_LOW = 0,
+  VC_VAD_SENSITIVITY_MEDIUM = 1,
+  VC_VAD_SENSITIVITY_HIGH = 2,
+} vc_vad_sensitivity;
+
 /// Session configuration. Start from vc_config_defaults() and override fields:
 /// the defaults live in the core only (one configuration struct).
 typedef struct vc_config {
@@ -53,6 +72,12 @@ typedef struct vc_config {
   int32_t keepalive_interval_ms;
   int32_t peer_timeout_ms;
   int32_t echo_mode;  // boolean, host only: return every audio packet to its sender
+  int32_t noise_suppression;  // vc_noise_suppression
+  int32_t automatic_gain;     // boolean: adaptive digital gain
+  int32_t echo_cancellation;  // boolean: software echo canceller
+  int32_t talk_mode;          // vc_talk_mode when the session starts
+  int32_t vad_sensitivity;    // vc_vad_sensitivity when the session starts
+  int32_t vad_tail_ms;        // the microphone stays open this long after speech
 } vc_config;
 
 /// Snapshot of the running session.
@@ -72,14 +97,17 @@ typedef struct vc_stats {
   uint32_t concealed_frames;
   uint32_t playout_underruns;
   uint32_t capture_overruns;
+  int32_t playout_queue_ms;  // decoded audio waiting for the speaker
 } vc_stats;
 
 /// Event types and their JSON payloads:
 ///   VC_EVENT_STATE_CHANGED  {"state":"running"|"stopped"|"failed"[,"error":<vc_result>]}
 ///   VC_EVENT_LINK_CHANGED   {"up":true|false,"peer":"a.b.c.d:port"}
+///   VC_EVENT_TALKING_CHANGED {"talking":true|false}  (the microphone is being sent)
 typedef enum vc_event_type {
   VC_EVENT_STATE_CHANGED = 1,
   VC_EVENT_LINK_CHANGED = 2,
+  VC_EVENT_TALKING_CHANGED = 3,
 } vc_event_type;
 
 /// Called from a core thread. `payload` is a NUL-terminated UTF-8 JSON string
@@ -108,6 +136,17 @@ VC_API void vc_set_mute(int32_t muted);
 
 /// Playback gain, clamped to [0, 4]. Non-finite values are ignored.
 VC_API void vc_set_output_gain(float gain);
+
+/// Changes the talk mode of the running session (vc_talk_mode).
+/// VC_ERR_INVALID_ARGUMENT for an unknown mode. vc_start resets it from vc_config.
+VC_API int32_t vc_set_talk_mode(int32_t mode);
+
+/// Push to talk: nonzero while the button is held. vc_start releases it.
+VC_API void vc_set_push_to_talk(int32_t pressed);
+
+/// Changes the voice detector's sensitivity (vc_vad_sensitivity).
+/// VC_ERR_INVALID_ARGUMENT for an unknown value. vc_start resets it from vc_config.
+VC_API int32_t vc_set_vad_sensitivity(int32_t sensitivity);
 
 /// Copies the latest statistics. VC_ERR_INVALID_STATE (and zeros) when idle.
 VC_API int32_t vc_get_stats(vc_stats* out);

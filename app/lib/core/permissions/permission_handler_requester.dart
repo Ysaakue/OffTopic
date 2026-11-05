@@ -25,6 +25,7 @@ final class PermissionHandlerRequester implements PermissionRequester {
   static Permission _toPlugin(AppPermission permission) => switch (permission) {
     AppPermission.microphone => Permission.microphone,
     AppPermission.localNetwork => Permission.accessLocalNetwork,
+    AppPermission.bluetoothConnect => Permission.bluetoothConnect,
   };
 
   static AppPermissionStatus _fromPlugin(PermissionStatus status) =>

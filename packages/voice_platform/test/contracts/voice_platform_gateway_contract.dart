@@ -99,6 +99,7 @@ void voicePlatformGatewayContract(
         serviceRunning: true,
         audioRoute: AudioRoute.bluetoothHeadset,
         wifiState: WifiState.connected,
+        systemCall: true,
       );
       const speaker = PlatformState(
         serviceRunning: true,

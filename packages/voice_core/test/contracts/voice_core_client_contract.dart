@@ -30,6 +30,15 @@ abstract interface class VoiceCoreClientHarness {
   /// The last gain the core received.
   double? get lastOutputGain;
 
+  /// The last talk mode the core received.
+  CoreTalkMode? get lastTalkMode;
+
+  /// The last push-to-talk state the core received.
+  bool? get lastPushToTalk;
+
+  /// The last voice detector sensitivity the core received.
+  CoreVadSensitivity? get lastVadSensitivity;
+
   void dispose();
 }
 
@@ -49,6 +58,7 @@ const _stats = CoreStats(
   concealedFrames: 4,
   playoutUnderruns: 5,
   captureOverruns: 6,
+  playoutQueueMs: 7,
 );
 
 const _defaults = CoreDefaults(
@@ -118,6 +128,29 @@ void voiceCoreClientContract(
       expect(harness.lastOutputGain, 0.75);
     });
 
+    test('forwards the talk mode', () {
+      harness.client.setTalkMode(CoreTalkMode.pushToTalk);
+      expect(harness.lastTalkMode, CoreTalkMode.pushToTalk);
+
+      harness.client.setTalkMode(CoreTalkMode.voice);
+      expect(harness.lastTalkMode, CoreTalkMode.voice);
+    });
+
+    test('forwards the push-to-talk button', () {
+      harness.client.setPushToTalk(pressed: true);
+      expect(harness.lastPushToTalk, isTrue);
+
+      harness.client.setPushToTalk(pressed: false);
+      expect(harness.lastPushToTalk, isFalse);
+    });
+
+    test('forwards every voice detector sensitivity', () {
+      for (final sensitivity in CoreVadSensitivity.values) {
+        harness.client.setVadSensitivity(sensitivity);
+        expect(harness.lastVadSensitivity, sensitivity);
+      }
+    });
+
     test('delivers events in order while someone listens', () async {
       expect(harness.eventsRegistered, isFalse);
       final events = <CoreEvent>[];
@@ -126,12 +159,14 @@ void voiceCoreClientContract(
 
       harness
         ..deliver(const CoreStateChanged(CoreState.running))
-        ..deliver(const CoreLinkChanged(up: true, peer: '192.168.43.1:47801'));
+        ..deliver(const CoreLinkChanged(up: true, peer: '192.168.43.1:47801'))
+        ..deliver(const CoreTalkingChanged(talking: true));
       await pumpEventQueue();
 
       expect(events, const [
         CoreStateChanged(CoreState.running),
         CoreLinkChanged(up: true, peer: '192.168.43.1:47801'),
+        CoreTalkingChanged(talking: true),
       ]);
       await subscription.cancel();
       expect(harness.eventsRegistered, isFalse);

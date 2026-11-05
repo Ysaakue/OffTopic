@@ -5,6 +5,7 @@
 
 #include "audio/miniaudio_device.h"
 #include "common/clock.h"
+#include "dsp/voice_processing_factory.h"
 #include "net/network_binder.h"
 #include "net/posix_udp_socket.h"
 
@@ -16,8 +17,11 @@ struct RealDependencies {
   NoopNetworkBinder binder;  // the Android binder arrives with WifiBinder (phase 4)
   PosixSocketFactory sockets{binder};
   MiniaudioDeviceFactory audio;
+  WebRtcVoiceProcessingFactory processing;
 
-  EngineDependencies view() noexcept { return EngineDependencies{audio, sockets, clock}; }
+  EngineDependencies view() noexcept {
+    return EngineDependencies{audio, sockets, clock, processing};
+  }
 };
 
 struct Registry {

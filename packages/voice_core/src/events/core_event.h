@@ -1,6 +1,7 @@
 // Events the core reports to the UI (docs/SPEC.md: participant joined/left,
 // who is talking, connection lost/restored). Phase 1 has the lifecycle and the
-// link state; later phases add participant and speaking events.
+// link state; phase 2 adds the local microphone gate (talking); phase 3 adds
+// participants and who is speaking.
 
 #ifndef VOICE_CORE_SRC_EVENTS_CORE_EVENT_H_
 #define VOICE_CORE_SRC_EVENTS_CORE_EVENT_H_
@@ -26,7 +27,13 @@ struct LinkChangedEvent {
   Endpoint peer;
 };
 
-using CoreEvent = std::variant<StateChangedEvent, LinkChangedEvent>;
+/// The local microphone started or stopped being sent (voice detector, push
+/// to talk or mute).
+struct TalkingChangedEvent {
+  bool talking = false;
+};
+
+using CoreEvent = std::variant<StateChangedEvent, LinkChangedEvent, TalkingChangedEvent>;
 
 /// Event type number as declared in voice_core.h (vc_event_type).
 [[nodiscard]] int32_t eventType(const CoreEvent& event) noexcept;

@@ -199,4 +199,38 @@ void main() {
       );
     });
   });
+
+  group('FfiVoiceCoreClient voice controls', () {
+    test('sends push to talk as 1 and 0', () {
+      final bindings = MockVoiceCoreBindings();
+      final core = NativeCoreDouble(bindings);
+      final client = FfiVoiceCoreClient(bindings)..setPushToTalk(pressed: true);
+      expect(core.pushToTalk, 1);
+
+      client.setPushToTalk(pressed: false);
+      expect(core.pushToTalk, 0);
+    });
+
+    test('names the control that the core refused', () {
+      final bindings = MockVoiceCoreBindings();
+      NativeCoreDouble(bindings).controlResult =
+          vc_result.VC_ERR_INVALID_ARGUMENT;
+      final client = FfiVoiceCoreClient(bindings);
+
+      expect(
+        () => client.setTalkMode(CoreTalkMode.voice),
+        throwsA(
+          isA<VoiceCoreException>().having(
+            (e) => e.message,
+            'message',
+            contains('vc_set_talk_mode'),
+          ),
+        ),
+      );
+      expect(
+        () => client.setVadSensitivity(CoreVadSensitivity.high),
+        throwsA(isA<VoiceCoreException>()),
+      );
+    });
+  });
 }

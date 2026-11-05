@@ -40,7 +40,29 @@ void main() {
     );
 
     expect(stats, isNot(other)); // only the RTT differs
-    expect(stats.props, hasLength(15));
+    expect(stats.props, hasLength(16));
+    expect(
+      other,
+      isNot(
+        const CoreStats(
+          participants: 1,
+          lossPct: 0,
+          jitterMs: 0,
+          jitterBufferMs: 40,
+          jitterTargetMs: 40,
+          inputLevel: 0,
+          packetsSent: 0,
+          packetsReceived: 0,
+          packetsLost: 0,
+          packetsLate: 0,
+          fecRecovered: 0,
+          concealedFrames: 0,
+          playoutUnderruns: 0,
+          captureOverruns: 0,
+          playoutQueueMs: 20,
+        ),
+      ),
+    );
   });
 
   test('CoreDefaults compares every field', () {

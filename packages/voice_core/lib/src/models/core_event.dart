@@ -46,3 +46,16 @@ final class CoreLinkChanged extends CoreEvent {
   @override
   List<Object?> get props => [up, peer];
 }
+
+/// The local microphone started or stopped being sent (voice detector, push
+/// to talk or mute).
+final class CoreTalkingChanged extends CoreEvent {
+  /// Creates the event.
+  const new({required this.talking});
+
+  /// Whether the microphone is being sent now.
+  final bool talking;
+
+  @override
+  List<Object?> get props => [talking];
+}

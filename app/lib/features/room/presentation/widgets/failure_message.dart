@@ -27,6 +27,8 @@ class FailureMessage extends StatelessWidget {
       l10n.audioTestErrorAudioDevice,
     RoomFailure(reason: RoomFailureReason.network) =>
       l10n.audioTestErrorNetwork,
+    RoomFailure(reason: RoomFailureReason.endedBySystem) =>
+      l10n.audioTestErrorEndedBySystem,
     _ => l10n.audioTestErrorUnavailable,
   };
 }

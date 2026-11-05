@@ -1,5 +1,6 @@
 // One iteration of the media thread: received datagrams -> session, captured
-// frames -> session (encode + send), decoded frames -> playout ring, then the
+// frames -> capture chain (processing, voice gate) -> session (encode + send),
+// decoded frames -> playout ring and the echo reference, then the
 // session's timers. Pure logic over rings: the thread that calls runOnce()
 // lives in VoiceEngine.
 
@@ -13,6 +14,7 @@
 
 #include "audio/audio_pipelines.h"
 #include "audio/spsc_ring_buffer.h"
+#include "engine/capture_chain.h"
 #include "net/audio_packet.h"
 #include "net/endpoint.h"
 #include "session/peer_session.h"
@@ -31,7 +33,8 @@ class MediaLoop {
  public:
   MediaLoop(PeerSession& session, SpscRingBuffer<int16_t>& capture,
             SpscRingBuffer<int16_t>& playout, PlayoutPipeline& device,
-            SpscRingBuffer<InboundDatagram>& inbound, const CoreConfig& config);
+            SpscRingBuffer<InboundDatagram>& inbound, CaptureChain& chain,
+            const CoreConfig& config);
 
   void runOnce(uint64_t nowUs);
 
@@ -41,6 +44,7 @@ class MediaLoop {
   SpscRingBuffer<int16_t>& playout_;
   PlayoutPipeline& device_;
   SpscRingBuffer<InboundDatagram>& inbound_;
+  CaptureChain& chain_;
   const std::size_t frameSamples_;
   const std::size_t playoutTargetSamples_;
   std::size_t largestBurst_ = 0;  // most samples the device drained between two passes

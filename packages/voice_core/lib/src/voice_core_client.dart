@@ -1,6 +1,7 @@
 import 'package:voice_core/src/models/core_defaults.dart';
 import 'package:voice_core/src/models/core_event.dart';
 import 'package:voice_core/src/models/core_stats.dart';
+import 'package:voice_core/src/models/voice_controls.dart';
 import 'package:voice_core/src/voice_core_exception.dart';
 
 /// What the core is: its version and its default parameters.
@@ -35,6 +36,16 @@ abstract interface class VoiceCoreEvents {
 abstract interface class VoiceCoreControls {
   /// Playback gain; the core clamps it to [0, 4].
   void setOutputGain(double gain);
+
+  /// Switches between the voice detector and push to talk while the session
+  /// runs (a new session starts from its configuration).
+  void setTalkMode(CoreTalkMode mode);
+
+  /// Push to talk: true while the button is held.
+  void setPushToTalk({required bool pressed});
+
+  /// How easily the voice detector opens the microphone.
+  void setVadSensitivity(CoreVadSensitivity sensitivity);
 }
 
 /// Typed access to the native voice core.

@@ -20,6 +20,11 @@ final class EventDecoder {
     if (type == vc_event_type.VC_EVENT_LINK_CHANGED.value) {
       return _linkChanged(_object(payload));
     }
+    if (type == vc_event_type.VC_EVENT_TALKING_CHANGED.value) {
+      return CoreTalkingChanged(
+        talking: _field<bool>(_object(payload), 'talking'),
+      );
+    }
     return null;
   }
 

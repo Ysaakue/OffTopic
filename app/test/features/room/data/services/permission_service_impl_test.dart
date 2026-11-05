@@ -36,7 +36,7 @@ void main() {
   tearDown(() => unawaited(platform.dispose()));
 
   group('the permissions asked depend on the Android version', () {
-    for (final apiLevel in [29, 30, 31, 33, 34]) {
+    for (final apiLevel in [29, 30]) {
       test('API $apiLevel: the microphone only', () async {
         platform.platformInfo = _phone(apiLevel: apiLevel);
 
@@ -46,13 +46,27 @@ void main() {
       });
     }
 
-    test('API 37: the microphone and the local network', () async {
+    for (final apiLevel in [31, 33, 34, 36]) {
+      test('API $apiLevel: the microphone and Bluetooth', () async {
+        platform.platformInfo = _phone(apiLevel: apiLevel);
+
+        await service.requestRoomPermissions();
+
+        expect(requester.requests.single, [
+          AppPermission.microphone,
+          AppPermission.bluetoothConnect,
+        ]);
+      });
+    }
+
+    test('API 37: the microphone, Bluetooth and the local network', () async {
       platform.platformInfo = _phone(apiLevel: 37);
 
       await service.requestRoomPermissions();
 
       expect(requester.requests.single, [
         AppPermission.microphone,
+        AppPermission.bluetoothConnect,
         AppPermission.localNetwork,
       ]);
     });

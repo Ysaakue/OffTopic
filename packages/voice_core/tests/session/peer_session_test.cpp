@@ -161,7 +161,7 @@ TEST_F(PeerSessionTest, TheClientKnowsItsPeerFromTheStart) {
 TEST_F(PeerSessionTest, TheClientSendsNumberedFramesToTheHost) {
   auto session = make(clientConfig());
   for (int i = 0; i < 5; ++i) {
-    session->onCaptureFrame(sineFrame(i).data());
+    session->onCaptureFrame(sineFrame(i).data(), true);
   }
 
   const std::vector<Datagram> sent = parsed(*socket_);
@@ -183,12 +183,12 @@ TEST_F(PeerSessionTest, StopsSendingDuringDtxAndMarksTheNextTalkspurt) {
   auto session = make(clientConfig());
   const std::vector<int16_t> silence(kFrame, 0);
   for (int i = 0; i < 3; ++i) {
-    session->onCaptureFrame(sineFrame(i).data());
+    session->onCaptureFrame(sineFrame(i).data(), true);
   }
   for (int i = 0; i < 50; ++i) {
-    session->onCaptureFrame(silence.data());
+    session->onCaptureFrame(silence.data(), true);
   }
-  session->onCaptureFrame(sineFrame(53).data());
+  session->onCaptureFrame(sineFrame(53).data(), true);
 
   const std::vector<Datagram> sent = parsed(*socket_);
   ASSERT_LT(sent.size(), 50U);  // most of the silence was not sent
@@ -204,14 +204,13 @@ TEST_F(PeerSessionTest, StopsSendingDuringDtxAndMarksTheNextTalkspurt) {
   EXPECT_GE(gaps, 1);
 }
 
-TEST_F(PeerSessionTest, DoesNotSendWhileMuted) {
+// The voice gate (detector, push to talk, mute) decides what is sent.
+TEST_F(PeerSessionTest, DoesNotSendFramesTheGateHolds) {
   auto session = make(clientConfig());
-  session->onCaptureFrame(sineFrame(0).data());
-  session->setMuted(true);
-  session->onCaptureFrame(sineFrame(1).data());
-  session->onCaptureFrame(sineFrame(2).data());
-  session->setMuted(false);
-  session->onCaptureFrame(sineFrame(3).data());
+  session->onCaptureFrame(sineFrame(0).data(), true);
+  session->onCaptureFrame(sineFrame(1).data(), false);
+  session->onCaptureFrame(sineFrame(2).data(), false);
+  session->onCaptureFrame(sineFrame(3).data(), true);
 
   const std::vector<Datagram> sent = parsed(*socket_);
   ASSERT_EQ(sent.size(), 2U);
@@ -220,13 +219,14 @@ TEST_F(PeerSessionTest, DoesNotSendWhileMuted) {
   EXPECT_TRUE(sent[1].header.has(packet_flags::kTalkspurtStart));
 }
 
-TEST_F(PeerSessionTest, MeasuresTheInputLevelEvenWhenMuted) {
+TEST_F(PeerSessionTest, MeasuresTheInputLevelOfFramesItDoesNotSend) {
   auto session = make(clientConfig());
-  session->setMuted(true);
   std::vector<int16_t> loud(kFrame, 0);
   loud[10] = -32768;
 
-  session->onCaptureFrame(loud.data());
+  session->onCaptureFrame(loud.data(), false);
+
+  EXPECT_TRUE(socket_->sent().empty());
 
   EXPECT_FLOAT_EQ(session->stats().inputLevel, 1.0F);
 }
@@ -235,7 +235,7 @@ TEST_F(PeerSessionTest, CountsFailedSends) {
   auto session = make(clientConfig());
   socket_->failSends(true);
 
-  session->onCaptureFrame(sineFrame(0).data());
+  session->onCaptureFrame(sineFrame(0).data(), true);
 
   EXPECT_EQ(session->stats().sendErrors, 1U);
   EXPECT_EQ(session->stats().packetsSent, 0U);
@@ -243,13 +243,13 @@ TEST_F(PeerSessionTest, CountsFailedSends) {
 
 TEST_F(PeerSessionTest, TheHostWaitsForAPeerBeforeSending) {
   auto session = make(hostConfig());
-  session->onCaptureFrame(sineFrame(0).data());
+  session->onCaptureFrame(sineFrame(0).data(), true);
   session->tick(1000 * kMs);
   EXPECT_TRUE(socket_->sent().empty());
 
   deliver(*session, keepalive(KeepaliveKind::kPing, 5, 255), kStranger, 1000 * kMs);
   socket_->clearSent();
-  session->onCaptureFrame(sineFrame(1).data());
+  session->onCaptureFrame(sineFrame(1).data(), true);
 
   const std::vector<Datagram> sent = audioOnly(parsed(*socket_));
   ASSERT_EQ(sent.size(), 1U);
@@ -407,7 +407,7 @@ TEST_F(PeerSessionTest, EchoModeReturnsAudioToItsSender) {
   const std::vector<uint8_t> datagram = client.next(packet_flags::kTalkspurtStart);
 
   deliver(*session, datagram, kStranger, 0);
-  session->onCaptureFrame(sineFrame(0).data());  // the host's own microphone is not sent
+  session->onCaptureFrame(sineFrame(0).data(), true);  // the host's own microphone is not sent
 
   const std::vector<testing::SentDatagram> sent = socket_->sent();
   ASSERT_EQ(sent.size(), 1U);
@@ -606,7 +606,7 @@ TEST_F(PeerSessionTest, EncodesAndDecodesWithoutAllocating) {
   const AllocationGuard guard;
 
   for (const std::vector<uint8_t>& datagram : incoming) {
-    session.onCaptureFrame(frame.data());
+    session.onCaptureFrame(frame.data(), true);
     session.onDatagram(datagram.data(), datagram.size(), kHost, 0);
     session.producePlayoutFrame(out.data());
   }

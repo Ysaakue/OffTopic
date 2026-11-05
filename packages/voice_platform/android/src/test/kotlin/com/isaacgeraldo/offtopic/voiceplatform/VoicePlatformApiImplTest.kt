@@ -2,11 +2,14 @@ package com.isaacgeraldo.offtopic.voiceplatform
 
 import com.isaacgeraldo.offtopic.voiceplatform.audio.CommunicationDeviceRouter
 import com.isaacgeraldo.offtopic.voiceplatform.audio.FakeAudioManagerFacade
+import com.isaacgeraldo.offtopic.voiceplatform.call.DeviceRouterCallAudio
 import com.isaacgeraldo.offtopic.voiceplatform.core.CoreResult
 import com.isaacgeraldo.offtopic.voiceplatform.core.FakeVoiceCoreBridge
 import com.isaacgeraldo.offtopic.voiceplatform.generated.FlutterError
 import com.isaacgeraldo.offtopic.voiceplatform.generated.RoomConfigMessage
 import com.isaacgeraldo.offtopic.voiceplatform.generated.RoomRoleMessage
+import com.isaacgeraldo.offtopic.voiceplatform.generated.TalkModeMessage
+import com.isaacgeraldo.offtopic.voiceplatform.generated.VadSensitivityMessage
 import com.isaacgeraldo.offtopic.voiceplatform.room.RoomController
 import com.isaacgeraldo.offtopic.voiceplatform.system.DeviceInfoProvider
 import com.isaacgeraldo.offtopic.voiceplatform.system.KeepScreenOnController
@@ -22,7 +25,17 @@ import kotlin.test.assertNull
 class VoicePlatformApiImplTest {
     private val keepScreenOn = RecordingKeepScreenOnController()
     private val core = FakeVoiceCoreBridge()
-    private val room = RoomController(core = { core }, router = CommunicationDeviceRouter(FakeAudioManagerFacade()))
+    private val room =
+        RoomController(
+            core = { core },
+            callAudio =
+                DeviceRouterCallAudio(
+                    router = CommunicationDeviceRouter(FakeAudioManagerFacade()),
+                    watchDevices = { AutoCloseable {} },
+                    routeExecutor = Runnable::run,
+                ),
+            eventExecutor = Runnable::run,
+        )
 
     private fun api(dispatcher: TestDispatcher) =
         VoicePlatformApiImpl(
@@ -146,6 +159,8 @@ class VoicePlatformApiImplTest {
             audioPort = 47801,
             bitrateBps = 24000,
             echoMode = false,
+            talkMode = TalkModeMessage.VOICE,
+            vadSensitivity = VadSensitivityMessage.MEDIUM,
         )
 
     private class FakeDeviceInfoProvider : DeviceInfoProvider {

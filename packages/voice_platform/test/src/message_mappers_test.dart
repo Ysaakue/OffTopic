@@ -31,6 +31,20 @@ void main() {
     }
   });
 
+  test('TalkMode round-trips through the same-named message', () {
+    for (final mode in TalkMode.values) {
+      expect(mode.toMessage().name, mode.name);
+      expect(mode.toMessage().toModel(), mode);
+    }
+  });
+
+  test('VadSensitivity round-trips through the same-named message', () {
+    for (final sensitivity in VadSensitivity.values) {
+      expect(sensitivity.toMessage().name, sensitivity.name);
+      expect(sensitivity.toMessage().toModel(), sensitivity);
+    }
+  });
+
   group('RoomConfig', () {
     test('converts to a message field by field', () {
       final message = sampleClientConfig.toMessage();
@@ -43,6 +57,7 @@ void main() {
         sampleClientConfig,
         sampleHostConfig,
         sampleEchoHostConfig,
+        samplePushToTalkConfig,
       ]) {
         expect(config.toMessage().toModel(), config);
       }
@@ -70,6 +85,7 @@ void main() {
       serviceRunning: true,
       audioRoute: AudioRouteMessage.bluetoothHeadset,
       wifiState: WifiStateMessage.connected,
+      systemCall: true,
     );
 
     expect(
@@ -78,6 +94,7 @@ void main() {
         serviceRunning: true,
         audioRoute: AudioRoute.bluetoothHeadset,
         wifiState: WifiState.connected,
+        systemCall: true,
       ),
     );
   });

@@ -21,6 +21,8 @@ internal class NativeVoiceCore : VoiceCoreBridge {
             config.displayName,
             config.bitrateBps,
             config.echoMode,
+            config.talkMode,
+            config.vadSensitivity,
         )
 
     override fun start(): Int = nativeStart()
@@ -37,6 +39,8 @@ internal class NativeVoiceCore : VoiceCoreBridge {
         displayName: String,
         bitrateBps: Int,
         echoMode: Boolean,
+        talkMode: Int,
+        vadSensitivity: Int,
     ): Int
 
     private external fun nativeStart(): Int

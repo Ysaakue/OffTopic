@@ -36,6 +36,43 @@ TEST(ConfigMapperTest, DefaultsMirrorCoreConfig) {
   EXPECT_EQ(config.keepalive_interval_ms, core.keepaliveIntervalMs);
   EXPECT_EQ(config.peer_timeout_ms, core.peerTimeoutMs);
   EXPECT_EQ(config.echo_mode, 0);
+  EXPECT_EQ(config.noise_suppression, static_cast<int32_t>(core.noiseSuppression));
+  EXPECT_EQ(config.automatic_gain, 1);
+  EXPECT_EQ(config.echo_cancellation, 0);
+  EXPECT_EQ(config.talk_mode, static_cast<int32_t>(core.talkMode));
+  EXPECT_EQ(config.vad_sensitivity, static_cast<int32_t>(core.vadSensitivity));
+  EXPECT_EQ(config.vad_tail_ms, core.vadTailMs);
+}
+
+TEST(ConfigMapperTest, CopiesTheVoiceProcessingFields) {
+  vc_config in = validClient();
+  in.noise_suppression = VC_NOISE_SUPPRESSION_LOW;
+  in.automatic_gain = 0;
+  in.echo_cancellation = 1;
+  in.talk_mode = VC_TALK_MODE_PUSH_TO_TALK;
+  in.vad_sensitivity = VC_VAD_SENSITIVITY_HIGH;
+  in.vad_tail_ms = 500;
+
+  const Expected<CoreConfig> out = toCoreConfig(in);
+
+  ASSERT_TRUE(out.hasValue());
+  EXPECT_EQ(out.value().noiseSuppression, NoiseSuppression::kLow);
+  EXPECT_FALSE(out.value().automaticGain);
+  EXPECT_TRUE(out.value().echoCancellation);
+  EXPECT_EQ(out.value().talkMode, TalkMode::kPushToTalk);
+  EXPECT_EQ(out.value().vadSensitivity, VadSensitivity::kHigh);
+  EXPECT_EQ(out.value().vadTailMs, 500);
+}
+
+TEST(ConfigMapperTest, ConvertsTheVoiceEnumsWithinTheirRange) {
+  EXPECT_EQ(toNoiseSuppression(VC_NOISE_SUPPRESSION_OFF), NoiseSuppression::kOff);
+  EXPECT_EQ(toNoiseSuppression(VC_NOISE_SUPPRESSION_VERY_HIGH), NoiseSuppression::kVeryHigh);
+  EXPECT_FALSE(toNoiseSuppression(-1).has_value());
+  EXPECT_FALSE(toNoiseSuppression(5).has_value());
+  EXPECT_EQ(toTalkMode(VC_TALK_MODE_VOICE), TalkMode::kVoice);
+  EXPECT_FALSE(toTalkMode(2).has_value());
+  EXPECT_EQ(toVadSensitivity(VC_VAD_SENSITIVITY_LOW), VadSensitivity::kLow);
+  EXPECT_FALSE(toVadSensitivity(3).has_value());
 }
 
 TEST(ConfigMapperTest, CopiesEveryField) {
@@ -118,6 +155,7 @@ TEST(ConfigMapperTest, CopiesEveryStatistic) {
   in.session.concealedFrames = 6;
   in.playoutUnderruns = 7;
   in.captureOverruns = 8;
+  in.playoutQueueMs = 25;
   vc_stats out{};
 
   toVcStats(in, &out);
@@ -137,6 +175,7 @@ TEST(ConfigMapperTest, CopiesEveryStatistic) {
   EXPECT_EQ(out.concealed_frames, 6U);
   EXPECT_EQ(out.playout_underruns, 7U);
   EXPECT_EQ(out.capture_overruns, 8U);
+  EXPECT_EQ(out.playout_queue_ms, 25);
 
   in.session.linkUp = false;
   toVcStats(in, &out);

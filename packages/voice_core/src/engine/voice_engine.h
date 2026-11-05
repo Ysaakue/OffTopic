@@ -20,6 +20,7 @@
 #include "common/clock.h"
 #include "common/status.h"
 #include "config/core_config.h"
+#include "dsp/voice_processing_factory.h"
 #include "events/event_dispatcher.h"
 #include "net/datagram_socket.h"
 #include "session/peer_session.h"
@@ -30,6 +31,7 @@ struct EngineDependencies {
   IAudioDeviceFactory& audio;
   ISocketFactory& sockets;
   const IClock& clock;
+  IVoiceProcessingFactory& processing;
 };
 
 struct EngineStats {
@@ -37,6 +39,7 @@ struct EngineStats {
   uint32_t playoutUnderruns = 0;
   uint32_t captureOverruns = 0;
   uint32_t inboundDropped = 0;
+  int playoutQueueMs = 0;  // decoded audio waiting for the device
 };
 
 class VoiceEngine {
@@ -59,8 +62,17 @@ class VoiceEngine {
   /// Stops everything. Idempotent.
   void stop();
 
+  // Controls. They act on the running session; start() resets them from the
+  // configuration (unmuted, push to talk released).
   void setMuted(bool muted) noexcept { muted_.store(muted, std::memory_order_relaxed); }
   void setOutputGain(float gain) noexcept { outputGain_.store(gain, std::memory_order_relaxed); }
+  void setTalkMode(TalkMode mode) noexcept { talkMode_.store(mode, std::memory_order_relaxed); }
+  void setPushToTalk(bool pressed) noexcept {
+    pushToTalk_.store(pressed, std::memory_order_relaxed);
+  }
+  void setVadSensitivity(VadSensitivity sensitivity) noexcept {
+    vadSensitivity_.store(sensitivity, std::memory_order_relaxed);
+  }
 
   /// Latest statistics; false (and `out` untouched) when not running.
   bool readStats(EngineStats* out) const;
@@ -85,6 +97,9 @@ class VoiceEngine {
 
   std::atomic<bool> muted_{false};
   std::atomic<float> outputGain_{1.0F};
+  std::atomic<TalkMode> talkMode_{TalkMode::kVoice};
+  std::atomic<bool> pushToTalk_{false};
+  std::atomic<VadSensitivity> vadSensitivity_{VadSensitivity::kMedium};
   EventDispatcher events_;
 
   mutable std::mutex statsMutex_;

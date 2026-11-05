@@ -39,6 +39,12 @@ enum AudioRouteMessage {
   earpiece,
 }
 
+/// How the microphone opens: voice detector or push to talk.
+enum TalkModeMessage { voice, pushToTalk }
+
+/// How easily the voice detector opens the microphone.
+enum VadSensitivityMessage { low, medium, high }
+
 /// Wi-Fi state as seen by the platform layer.
 enum WifiStateMessage { unknown, disconnected, connected }
 
@@ -50,6 +56,8 @@ class RoomConfigMessage {
     required this.audioPort,
     required this.bitrateBps,
     required this.echoMode,
+    required this.talkMode,
+    required this.vadSensitivity,
     this.hostIp,
   });
 
@@ -64,6 +72,13 @@ class RoomConfigMessage {
 
   /// Host only: return every audio packet to its sender (round-trip test).
   bool echoMode;
+
+  /// How the microphone opens when the room starts (Dart changes it later
+  /// through FFI).
+  TalkModeMessage talkMode;
+
+  /// The voice detector's sensitivity when the room starts.
+  VadSensitivityMessage vadSensitivity;
 }
 
 class PlatformCapabilitiesMessage {
@@ -115,11 +130,16 @@ class PlatformStateMessage {
     required this.serviceRunning,
     required this.audioRoute,
     required this.wifiState,
+    required this.systemCall,
   });
 
   bool serviceRunning;
   AudioRouteMessage audioRoute;
   WifiStateMessage wifiState;
+
+  /// The room is registered as a call with the system (Telecom), so headsets
+  /// see a real call; false when it is only routed.
+  bool systemCall;
 }
 
 @HostApi()

@@ -33,6 +33,17 @@ class RecordingEventSink final : public IEventSink {
     return states;
   }
 
+  /// The talking events, in order (true = the microphone is sent).
+  std::vector<bool> talkingStates() const {
+    std::vector<bool> states;
+    for (const CoreEvent& event : events()) {
+      if (const auto* talking = std::get_if<TalkingChangedEvent>(&event)) {
+        states.push_back(talking->talking);
+      }
+    }
+    return states;
+  }
+
  private:
   mutable std::mutex mutex_;
   std::vector<CoreEvent> events_;

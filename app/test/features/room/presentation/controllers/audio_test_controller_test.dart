@@ -9,9 +9,11 @@ import 'package:offtopic/core/result/app_failure.dart';
 import 'package:offtopic/features/room/presentation/controllers/audio_test_state.dart';
 import 'package:offtopic/features/room/room_providers.dart';
 import 'package:voice_core/testing.dart';
+import 'package:voice_core/voice_core.dart';
 import 'package:voice_platform/testing.dart';
 import 'package:voice_platform/voice_platform.dart';
 
+import '../../../../helpers/fake_key_value_store.dart';
 import '../../../../helpers/fake_permission_requester.dart';
 import '../../../../helpers/room_fixtures.dart';
 
@@ -19,17 +21,20 @@ void main() {
   late FakeVoicePlatformGateway platform;
   late FakeVoiceCoreClient core;
   late FakePermissionRequester permissions;
+  late FakeKeyValueStore store;
   late ProviderContainer container;
 
   setUp(() {
     platform = FakeVoicePlatformGateway();
     core = FakeVoiceCoreClient();
     permissions = FakePermissionRequester();
+    store = FakeKeyValueStore();
     container = ProviderContainer(
       overrides: [
         voicePlatformGatewayProvider.overrideWithValue(platform),
         voiceCoreClientProvider.overrideWithValue(core),
         permissionRequesterProvider.overrideWithValue(permissions),
+        keyValueStoreProvider.overrideWithValue(store),
       ],
     );
   });
@@ -47,6 +52,50 @@ void main() {
 
   test('starts idle', () {
     expect(state(), const AudioTestIdle());
+  });
+
+  test('the phone ending the call ends the room', () async {
+    await start();
+    expect(state(), AudioTestActive(joinRequest));
+
+    core.emitEvent(const CoreStateChanged(CoreState.stopped));
+    await pumpEventQueue();
+
+    expect(
+      state(),
+      const AudioTestFailed(
+        RoomFailure(
+          RoomFailureReason.endedBySystem,
+          'The phone ended the call.',
+        ),
+      ),
+    );
+  });
+
+  test(
+    'a stop asked from here is not reported as the phone ending it',
+    () async {
+      await start();
+
+      await stop();
+      core.emitEvent(const CoreStateChanged(CoreState.stopped));
+      await pumpEventQueue();
+
+      expect(state(), const AudioTestIdle());
+    },
+  );
+
+  test('push to talk reaches the core only while a room runs', () async {
+    final controller = container.read(audioTestControllerProvider.notifier)
+      ..setPushToTalk(pressed: true);
+    expect(core.pushToTalk, isEmpty);
+
+    await start();
+    controller
+      ..setPushToTalk(pressed: true)
+      ..setPushToTalk(pressed: false);
+
+    expect(core.pushToTalk, [true, false]);
   });
 
   test('goes from starting to active', () async {

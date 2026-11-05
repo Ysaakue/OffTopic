@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:offtopic/features/room/domain/entities/local_address.dart';
 import 'package:offtopic/features/room/domain/entities/room_link.dart';
 import 'package:offtopic/features/room/domain/entities/room_request.dart';
 import 'package:offtopic/features/room/domain/entities/session_stats.dart';
@@ -46,5 +47,17 @@ void main() {
       const RoomLink(up: true, peer: 'a:1'),
       isNot(const RoomLink(up: false, peer: 'a:1')),
     );
+  });
+
+  test('local addresses compare kind and address', () {
+    expect(
+      LocalAddress(kind: LocalNetworkKind.hotspot, address: hostAddress),
+      hotspotAddress,
+    );
+    expect(
+      LocalAddress(kind: LocalNetworkKind.wifi, address: hostAddress),
+      isNot(hotspotAddress),
+    );
+    expect(hotspotAddress, isNot(wifiAddress));
   });
 }

@@ -175,8 +175,110 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get permissionDeniedBody =>
-      'OffTopic needs the microphone and, from Android 17, access to devices on the local network to talk over the hotspot.';
+      'OffTopic needs the microphone, the connection to your Bluetooth intercom and, from Android 17, access to devices on the local network to talk over the hotspot.';
 
   @override
   String get permissionOpenSettings => 'Open settings';
+
+  @override
+  String get talkModeLabel => 'Talk mode';
+
+  @override
+  String get talkModeVoice => 'Voice';
+
+  @override
+  String get talkModePushToTalk => 'Push to talk';
+
+  @override
+  String get vadSensitivityLabel => 'Voice detection';
+
+  @override
+  String get vadSensitivityLow => 'Low';
+
+  @override
+  String get vadSensitivityMedium => 'Medium';
+
+  @override
+  String get vadSensitivityHigh => 'High';
+
+  @override
+  String get talkSettingsSaveFailed =>
+      'This setting could not be saved: it applies to this room only.';
+
+  @override
+  String get pushToTalkHold => 'Hold to talk';
+
+  @override
+  String get pushToTalkTalking => 'Talking…';
+
+  @override
+  String audioRouteLabel(String route) {
+    return 'Audio: $route';
+  }
+
+  @override
+  String get audioRouteIntercom => 'Intercom (Bluetooth)';
+
+  @override
+  String get audioRouteHeadset => 'Headset';
+
+  @override
+  String get audioRouteSpeaker => 'Loudspeaker';
+
+  @override
+  String get audioRouteEarpiece => 'Earpiece';
+
+  @override
+  String get audioRouteUnknown => 'not routed yet';
+
+  @override
+  String get talkingOnAir => 'Your microphone is on the air';
+
+  @override
+  String get talkingQuiet => 'Your microphone is quiet';
+
+  @override
+  String get audioCallModeSystem => 'Phone call mode: the intercom sees a call';
+
+  @override
+  String get audioCallModeDirect =>
+      'Direct audio routing (the phone refused the call mode)';
+
+  @override
+  String get audioTestErrorEndedBySystem =>
+      'The phone ended the room: another call, or the headset\'s hang-up button.';
+
+  @override
+  String get reportCopy => 'Copy report';
+
+  @override
+  String get reportCopied =>
+      'Report copied: paste it in the chat with the developers.';
+
+  @override
+  String get hostAddressTitle => 'Your IP: the other riders type it to join';
+
+  @override
+  String hostAddressEntry(String network, String address) {
+    return '$network: $address';
+  }
+
+  @override
+  String get hostAddressHotspot => 'Hotspot';
+
+  @override
+  String get hostAddressWifi => 'Wi-Fi';
+
+  @override
+  String get hostAddressOther => 'Other network';
+
+  @override
+  String get hostAddressNone =>
+      'No local network yet: turn on this phone\'s hotspot.';
+
+  @override
+  String get hostAddressUnavailable => 'Could not read this phone\'s IP.';
+
+  @override
+  String get hostAddressRefresh => 'Refresh IP';
 }

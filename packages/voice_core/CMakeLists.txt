@@ -34,6 +34,9 @@ include(cmake/VoiceCoreOptions.cmake)
 
 # --- Third-party libraries: git submodules pinned to tags (docs/DEPENDENCIES.md).
 # Nothing is downloaded during the build.
+# Their own test suites stay out: Abseil's include(CTest) would otherwise turn
+# BUILD_TESTING on and Opus would register tests that are never built.
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(OPUS_BUILD_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
 set(OPUS_BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(OPUS_BUILD_PROGRAMS OFF CACHE BOOL "" FORCE)
@@ -42,6 +45,9 @@ set(OPUS_INSTALL_CMAKE_CONFIG_MODULE OFF CACHE BOOL "" FORCE)
 set(OPUS_DRED OFF CACHE BOOL "" FORCE)  # DRED and OSCE need model files that would
 set(OPUS_OSCE OFF CACHE BOOL "" FORCE)  # have to be downloaded
 add_subdirectory(third_party/opus EXCLUDE_FROM_ALL SYSTEM)
+
+# WebRTC audio processing (noise suppression, AGC, AEC, VAD) and Abseil.
+include(cmake/webrtc_apm.cmake)
 
 # miniaudio: only the low-level device API is compiled.
 add_library(vc_miniaudio STATIC third_party/miniaudio/miniaudio.c)
@@ -62,6 +68,11 @@ add_library(voice_core_lib OBJECT
   src/codec/opus_codec.cpp
   src/common/clock.cpp
   src/config/core_config.cpp
+  src/dsp/voice_gate.cpp
+  src/dsp/voice_processing_factory.cpp
+  src/dsp/webrtc_audio_processor.cpp
+  src/dsp/webrtc_voice_detector.cpp
+  src/engine/capture_chain.cpp
   src/engine/media_loop.cpp
   src/engine/network_pump.cpp
   src/engine/voice_engine.cpp
@@ -86,13 +97,13 @@ target_include_directories(voice_core_lib
   PRIVATE ${PROJECT_SOURCE_DIR}/src
 )
 target_compile_features(voice_core_lib PUBLIC cxx_std_17)
-target_link_libraries(voice_core_lib PUBLIC opus vc_miniaudio)
+target_link_libraries(voice_core_lib PUBLIC opus vc_miniaudio vc_webrtc_apm)
 vc_apply_warnings(voice_core_lib)
 vc_apply_coverage(voice_core_lib)
 
 # --- Shared library loaded by dart:ffi and by JNI (libvoice_core.so).
 add_library(voice_core SHARED $<TARGET_OBJECTS:voice_core_lib>)
-target_link_libraries(voice_core PRIVATE opus vc_miniaudio)
+target_link_libraries(voice_core PRIVATE opus vc_miniaudio vc_webrtc_apm)
 if(VC_ENABLE_COVERAGE)
   target_link_options(voice_core PRIVATE --coverage)
 endif()

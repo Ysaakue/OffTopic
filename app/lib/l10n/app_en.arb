@@ -244,12 +244,152 @@
   "@permissionDeniedTitle": {
     "description": "Title when a room permission was refused."
   },
-  "permissionDeniedBody": "OffTopic needs the microphone and, from Android 17, access to devices on the local network to talk over the hotspot.",
+  "permissionDeniedBody": "OffTopic needs the microphone, the connection to your Bluetooth intercom and, from Android 17, access to devices on the local network to talk over the hotspot.",
   "@permissionDeniedBody": {
     "description": "Why the permissions are needed."
   },
   "permissionOpenSettings": "Open settings",
   "@permissionOpenSettings": {
     "description": "Button that opens the app settings."
+  },
+  "talkModeLabel": "Talk mode",
+  "@talkModeLabel": {
+    "description": "Title of the choice between the voice detector and push to talk."
+  },
+  "talkModeVoice": "Voice",
+  "@talkModeVoice": {
+    "description": "Talk mode: the microphone opens when the rider speaks."
+  },
+  "talkModePushToTalk": "Push to talk",
+  "@talkModePushToTalk": {
+    "description": "Talk mode: the microphone opens only while a button is held."
+  },
+  "vadSensitivityLabel": "Voice detection",
+  "@vadSensitivityLabel": {
+    "description": "Title of the voice detector sensitivity choice."
+  },
+  "vadSensitivityLow": "Low",
+  "@vadSensitivityLow": {
+    "description": "Voice detector sensitivity: needs clear speech, best in strong wind."
+  },
+  "vadSensitivityMedium": "Medium",
+  "@vadSensitivityMedium": {
+    "description": "Voice detector sensitivity: the default."
+  },
+  "vadSensitivityHigh": "High",
+  "@vadSensitivityHigh": {
+    "description": "Voice detector sensitivity: also opens on quiet speech."
+  },
+  "talkSettingsSaveFailed": "This setting could not be saved: it applies to this room only.",
+  "@talkSettingsSaveFailed": {
+    "description": "Shown when a talk setting could not be stored on the phone."
+  },
+  "pushToTalkHold": "Hold to talk",
+  "@pushToTalkHold": {
+    "description": "Label of the big push-to-talk button while it is released."
+  },
+  "pushToTalkTalking": "Talking…",
+  "@pushToTalkTalking": {
+    "description": "Label of the big push-to-talk button while it is held."
+  },
+  "audioRouteLabel": "Audio: {route}",
+  "@audioRouteLabel": {
+    "description": "Where the room is heard and spoken into.",
+    "placeholders": {
+      "route": {
+        "type": "String",
+        "example": "Intercom (Bluetooth)"
+      }
+    }
+  },
+  "audioRouteIntercom": "Intercom (Bluetooth)",
+  "@audioRouteIntercom": {
+    "description": "Audio route: the rider's Bluetooth intercom."
+  },
+  "audioRouteHeadset": "Headset",
+  "@audioRouteHeadset": {
+    "description": "Audio route: a wired or USB headset."
+  },
+  "audioRouteSpeaker": "Loudspeaker",
+  "@audioRouteSpeaker": {
+    "description": "Audio route: the phone's loudspeaker."
+  },
+  "audioRouteEarpiece": "Earpiece",
+  "@audioRouteEarpiece": {
+    "description": "Audio route: the phone's earpiece."
+  },
+  "audioRouteUnknown": "not routed yet",
+  "@audioRouteUnknown": {
+    "description": "Audio route not known yet."
+  },
+  "talkingOnAir": "Your microphone is on the air",
+  "@talkingOnAir": {
+    "description": "The local microphone is being sent to the room."
+  },
+  "talkingQuiet": "Your microphone is quiet",
+  "@talkingQuiet": {
+    "description": "The local microphone is not being sent (no voice, button released or muted)."
+  },
+  "audioCallModeSystem": "Phone call mode: the intercom sees a call",
+  "@audioCallModeSystem": {
+    "description": "The room is registered as a call with the phone, so the Bluetooth intercom treats it like a phone call."
+  },
+  "audioCallModeDirect": "Direct audio routing (the phone refused the call mode)",
+  "@audioCallModeDirect": {
+    "description": "The phone did not accept the room as a call; the audio is only routed."
+  },
+  "audioTestErrorEndedBySystem": "The phone ended the room: another call, or the headset's hang-up button.",
+  "@audioTestErrorEndedBySystem": {
+    "description": "Shown when the system ended the room's call."
+  },
+  "reportCopy": "Copy report",
+  "@reportCopy": {
+    "description": "Button that copies the room's report (delay, losses, route) to the clipboard."
+  },
+  "reportCopied": "Report copied: paste it in the chat with the developers.",
+  "@reportCopied": {
+    "description": "Confirmation after copying the room's report."
+  },
+  "hostAddressTitle": "Your IP: the other riders type it to join",
+  "@hostAddressTitle": {
+    "description": "Heading above the host phone's own IP addresses."
+  },
+  "hostAddressEntry": "{network}: {address}",
+  "@hostAddressEntry": {
+    "description": "One of the host phone's IP addresses and the network it belongs to, e.g. 'Hotspot: 192.168.43.1'.",
+    "placeholders": {
+      "network": {
+        "type": "String",
+        "example": "Hotspot"
+      },
+      "address": {
+        "type": "String",
+        "example": "192.168.43.1"
+      }
+    }
+  },
+  "hostAddressHotspot": "Hotspot",
+  "@hostAddressHotspot": {
+    "description": "Network kind: this phone's own Wi-Fi hotspot."
+  },
+  "hostAddressWifi": "Wi-Fi",
+  "@hostAddressWifi": {
+    "description": "Network kind: a Wi-Fi network this phone joined."
+  },
+  "hostAddressOther": "Other network",
+  "@hostAddressOther": {
+    "description": "Network kind: another local network (USB or Ethernet tethering)."
+  },
+  "hostAddressNone": "No local network yet: turn on this phone's hotspot.",
+  "@hostAddressNone": {
+    "description": "The host phone has no address the other riders can reach."
+  },
+  "hostAddressUnavailable": "Could not read this phone's IP.",
+  "@hostAddressUnavailable": {
+    "description": "The phone's network interfaces could not be listed."
+  },
+  "hostAddressRefresh": "Refresh IP",
+  "@hostAddressRefresh": {
+    "description": "Button that reads the host phone's IP addresses again."
   }
 }

@@ -1,6 +1,7 @@
 import 'package:voice_core/src/generated/voice_core_bindings.g.dart';
 import 'package:voice_core/src/models/core_defaults.dart';
 import 'package:voice_core/src/models/core_stats.dart';
+import 'package:voice_core/src/models/voice_controls.dart';
 
 /// Converts vc_config (as filled by vc_config_defaults) to [CoreDefaults].
 extension VcConfigToDefaults on vc_config {
@@ -41,5 +42,26 @@ extension VcStatsToModel on vc_stats {
     concealedFrames: concealed_frames,
     playoutUnderruns: playout_underruns,
     captureOverruns: capture_overruns,
+    playoutQueueMs: playout_queue_ms,
   );
+}
+
+/// The vc_talk_mode value of a [CoreTalkMode].
+extension CoreTalkModeToNative on CoreTalkMode {
+  /// The C enum value.
+  int get native => switch (this) {
+    CoreTalkMode.voice => vc_talk_mode.VC_TALK_MODE_VOICE.value,
+    CoreTalkMode.pushToTalk => vc_talk_mode.VC_TALK_MODE_PUSH_TO_TALK.value,
+  };
+}
+
+/// The vc_vad_sensitivity value of a [CoreVadSensitivity].
+extension CoreVadSensitivityToNative on CoreVadSensitivity {
+  /// The C enum value.
+  int get native => switch (this) {
+    CoreVadSensitivity.low => vc_vad_sensitivity.VC_VAD_SENSITIVITY_LOW.value,
+    CoreVadSensitivity.medium =>
+      vc_vad_sensitivity.VC_VAD_SENSITIVITY_MEDIUM.value,
+    CoreVadSensitivity.high => vc_vad_sensitivity.VC_VAD_SENSITIVITY_HIGH.value,
+  };
 }

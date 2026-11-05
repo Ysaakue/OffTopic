@@ -7,13 +7,16 @@
 #include <vector>
 
 #include "fakes/fake_network.h"
+#include "fakes/fake_voice_processing.h"
 #include "fakes/recording_event_sink.h"
 
 namespace voice_core {
 namespace {
 
 using testing::FakeNetwork;
+using testing::RecordingAudioProcessor;
 using testing::RecordingEventSink;
+using testing::ScriptedVoiceDetector;
 
 constexpr uint32_t kLoopback = 0x7F000001;
 constexpr std::size_t kFrame = 320;
@@ -25,7 +28,8 @@ class MediaLoopTest : public ::testing::Test {
     config_.displayName = "Ana";
     auto created = PeerSession::create(config_, *socket_, events_);
     session_ = std::move(created).value();
-    loop_ = std::make_unique<MediaLoop>(*session_, capture_, playout_, device_, inbound_, config_);
+    loop_ = std::make_unique<MediaLoop>(*session_, capture_, playout_, device_, inbound_, chain_,
+                                        config_);
   }
 
   std::size_t audioSent() const {
@@ -45,6 +49,10 @@ class MediaLoopTest : public ::testing::Test {
   SpscRingBuffer<int16_t> playout_{kFrame * 16};
   PlayoutPipeline device_{playout_};
   SpscRingBuffer<InboundDatagram> inbound_{8};
+  RecordingAudioProcessor processor_;
+  ScriptedVoiceDetector detector_;
+  VoiceGate gate_{config_};
+  CaptureChain chain_{processor_, detector_, gate_, events_};
   std::unique_ptr<MediaLoop> loop_;
 };
 
@@ -116,6 +124,23 @@ TEST_F(MediaLoopTest, HandsQueuedDatagramsToTheSession) {
 
   EXPECT_EQ(inbound_.size(), 0U);
   EXPECT_TRUE(session_->stats().linkUp);
+}
+
+TEST_F(MediaLoopTest, SendsOnlyWhatTheVoiceGateLetsThrough) {
+  detector_.voice = false;  // silence and no tail yet: the gate stays closed
+  std::vector<int16_t> samples(kFrame * 2, 1000);
+  capture_.write(samples.data(), samples.size());
+
+  loop_->runOnce(0);
+
+  EXPECT_EQ(processor_.captured.load(), 2);  // processed even when not sent
+  EXPECT_EQ(audioSent(), 0U);
+}
+
+TEST_F(MediaLoopTest, FeedsEveryDecodedFrameToTheEchoReference) {
+  loop_->runOnce(0);
+
+  EXPECT_EQ(static_cast<std::size_t>(processor_.rendered.load()) * kFrame, playout_.size());
 }
 
 TEST_F(MediaLoopTest, RunsTheSessionTimers) {

@@ -5,7 +5,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cmath>
 #include <limits>
 #include <mutex>
@@ -17,6 +19,7 @@
 #include "core_version.h"
 #include "fakes/fake_audio_device.h"
 #include "fakes/fake_network.h"
+#include "fakes/fake_voice_processing.h"
 #include "support/allocation_guard.h"
 
 namespace {
@@ -39,7 +42,7 @@ void collectEvent(int32_t /*event*/, char* payload) {
 class VcApiTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    const voice_core::EngineDependencies dependencies{audio_, sockets_, clock_};
+    const voice_core::EngineDependencies dependencies{audio_, sockets_, clock_, processing_};
     voice_core::api::resetEngineForTesting(&dependencies);
     const std::lock_guard<std::mutex> lock(eventsMutex);
     eventPayloads.clear();
@@ -59,6 +62,7 @@ class VcApiTest : public ::testing::Test {
   voice_core::testing::FakeSocketFactory sockets_{network_};
   voice_core::testing::FakeAudioDeviceFactory audio_;
   voice_core::SteadyClock clock_;
+  voice_core::testing::FakeVoiceProcessingFactory processing_;
 };
 
 TEST(VcVersionTest, ReturnsCoreVersion) { EXPECT_STREQ(vc_version(), voice_core::kVersion); }
@@ -155,6 +159,64 @@ TEST_F(VcApiTest, AcceptsOnlyFiniteOutputGains) {
   vc_set_output_gain(1.0F);
 }
 
+TEST_F(VcApiTest, DefaultsIncludeTheVoiceProcessing) {
+  vc_config config;
+  vc_config_defaults(&config);
+
+  EXPECT_EQ(config.noise_suppression, VC_NOISE_SUPPRESSION_HIGH);
+  EXPECT_EQ(config.automatic_gain, 1);
+  EXPECT_EQ(config.echo_cancellation, 0);
+  EXPECT_EQ(config.talk_mode, VC_TALK_MODE_VOICE);
+  EXPECT_EQ(config.vad_sensitivity, VC_VAD_SENSITIVITY_MEDIUM);
+  EXPECT_EQ(config.vad_tail_ms, 300);
+}
+
+TEST_F(VcApiTest, RejectsUnknownVoiceProcessingValues) {
+  const auto rejected = [](void (*edit)(vc_config&)) {
+    vc_config config = client();
+    edit(config);
+    return vc_init(&config) == VC_ERR_INVALID_ARGUMENT;
+  };
+
+  EXPECT_TRUE(rejected([](vc_config& c) { c.noise_suppression = 5; }));
+  EXPECT_TRUE(rejected([](vc_config& c) { c.noise_suppression = 260; }));  // no wrap to 4
+  EXPECT_TRUE(rejected([](vc_config& c) { c.talk_mode = -1; }));
+  EXPECT_TRUE(rejected([](vc_config& c) { c.vad_sensitivity = 3; }));
+  EXPECT_TRUE(rejected([](vc_config& c) { c.vad_tail_ms = -20; }));
+}
+
+TEST_F(VcApiTest, ValidatesTheVoiceControls) {
+  EXPECT_EQ(vc_set_talk_mode(VC_TALK_MODE_PUSH_TO_TALK), VC_OK);
+  EXPECT_EQ(vc_set_talk_mode(VC_TALK_MODE_VOICE), VC_OK);
+  EXPECT_EQ(vc_set_talk_mode(2), VC_ERR_INVALID_ARGUMENT);
+  EXPECT_EQ(vc_set_vad_sensitivity(VC_VAD_SENSITIVITY_LOW), VC_OK);
+  EXPECT_EQ(vc_set_vad_sensitivity(-1), VC_ERR_INVALID_ARGUMENT);
+  vc_set_push_to_talk(1);
+  vc_set_push_to_talk(0);
+}
+
+TEST_F(VcApiTest, ReportsWhenTheMicrophoneIsSent) {
+  vc_set_event_callback(collectEvent);
+  const vc_config config = client();
+  ASSERT_EQ(vc_init(&config), VC_OK);
+  ASSERT_EQ(vc_start(), VC_OK);
+
+  const auto talking = [] {
+    const std::lock_guard<std::mutex> lock(eventsMutex);
+    return std::find(eventPayloads.begin(), eventPayloads.end(), R"({"talking":true})") !=
+           eventPayloads.end();
+  };
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (!talking() && std::chrono::steady_clock::now() < deadline) {
+    audio_.last->pump(std::vector<int16_t>(160, 1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  vc_stop();
+  vc_set_event_callback(nullptr);
+
+  EXPECT_TRUE(talking());
+}
+
 // Under ThreadSanitizer: Kotlin drives the lifecycle while Dart polls.
 TEST_F(VcApiTest, IsThreadSafe) {
   const vc_config config = client();
@@ -165,6 +227,10 @@ TEST_F(VcApiTest, IsThreadSafe) {
     while (!done) {
       vc_get_stats(&stats);
       vc_set_output_gain(0.8F);
+      vc_set_talk_mode(VC_TALK_MODE_PUSH_TO_TALK);
+      vc_set_push_to_talk(1);
+      vc_set_vad_sensitivity(VC_VAD_SENSITIVITY_HIGH);
+      vc_set_talk_mode(VC_TALK_MODE_VOICE);
       vc_set_event_callback(collectEvent);
       vc_set_event_callback(nullptr);
     }

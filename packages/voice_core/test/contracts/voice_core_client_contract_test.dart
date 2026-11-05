@@ -2,6 +2,7 @@ import 'dart:ffi';
 
 import 'package:mocktail/mocktail.dart';
 import 'package:voice_core/src/generated/voice_core_bindings.g.dart';
+import 'package:voice_core/src/native_mappers.dart';
 import 'package:voice_core/testing.dart';
 import 'package:voice_core/voice_core.dart';
 
@@ -70,6 +71,26 @@ final class _FfiHarness implements VoiceCoreClientHarness {
   double? get lastOutputGain => _core.outputGain;
 
   @override
+  CoreTalkMode? get lastTalkMode => switch (_core.talkMode) {
+    null => null,
+    final mode => CoreTalkMode.values.firstWhere((m) => m.native == mode),
+  };
+
+  @override
+  bool? get lastPushToTalk => switch (_core.pushToTalk) {
+    null => null,
+    final pressed => pressed != 0,
+  };
+
+  @override
+  CoreVadSensitivity? get lastVadSensitivity => switch (_core.vadSensitivity) {
+    null => null,
+    final value => CoreVadSensitivity.values.firstWhere(
+      (s) => s.native == value,
+    ),
+  };
+
+  @override
   void dispose() {
     client.dispose();
     _strings.freeAll();
@@ -114,6 +135,16 @@ final class _FakeHarness implements VoiceCoreClientHarness {
   @override
   double? get lastOutputGain =>
       _fake.outputGains.isEmpty ? null : _fake.outputGains.last;
+
+  @override
+  CoreTalkMode? get lastTalkMode => _fake.talkModes.lastOrNull;
+
+  @override
+  bool? get lastPushToTalk => _fake.pushToTalk.lastOrNull;
+
+  @override
+  CoreVadSensitivity? get lastVadSensitivity =>
+      _fake.vadSensitivities.lastOrNull;
 
   @override
   void dispose() => _fake.dispose();

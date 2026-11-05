@@ -12,6 +12,16 @@ namespace voice_core {
 
 enum class Role : uint8_t { kClient, kHost };
 
+/// Strength of the noise suppressor (WebRTC NS levels), or off.
+enum class NoiseSuppression : uint8_t { kOff, kLow, kModerate, kHigh, kVeryHigh };
+
+/// Voice: the voice detector opens the microphone. Push to talk: only while held.
+enum class TalkMode : uint8_t { kVoice, kPushToTalk };
+
+/// How easily the voice detector opens: low needs clear speech, high also
+/// opens on quiet speech (and more noise).
+enum class VadSensitivity : uint8_t { kLow, kMedium, kHigh };
+
 struct CoreConfig {
   // --- Session
   Role role = Role::kClient;
@@ -55,9 +65,17 @@ struct CoreConfig {
   int controlTimeoutMs = 5000;       // phase 3
   int reconnectGraceMs = 30000;      // phase 4
 
+  // --- Voice processing (microphone, before encoding)
+  NoiseSuppression noiseSuppression = NoiseSuppression::kHigh;  // wind and engine noise
+  bool automaticGain = true;      // adaptive digital gain (WebRTC AGC2)
+  bool highPassFilter = true;     // removes rumble below about 80 Hz
+  bool echoCancellation = false;  // software AEC; the call path already cancels echo
+  TalkMode talkMode = TalkMode::kVoice;
+  VadSensitivity vadSensitivity = VadSensitivity::kMedium;
+  int vadTailMs = 300;  // the microphone stays open this long after speech stops
+
   // --- Room
   int maxParticipants = 8;  // phase 3
-  int vadTailMs = 300;      // phase 2
 
   [[nodiscard]] int frameMs() const noexcept { return frameSamples * kMsPerSecond / sampleRateHz; }
   [[nodiscard]] int msToSamples(int ms) const noexcept { return ms * sampleRateHz / kMsPerSecond; }
@@ -89,6 +107,9 @@ enum class ConfigError : uint8_t {
   kControlTiming,
   kReconnectGrace,
   kMaxParticipants,
+  kNoiseSuppression,
+  kTalkMode,
+  kVadSensitivity,
   kVadTail,
 };
 

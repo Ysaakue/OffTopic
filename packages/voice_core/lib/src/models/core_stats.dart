@@ -18,6 +18,7 @@ final class CoreStats extends Equatable {
     required this.concealedFrames,
     required this.playoutUnderruns,
     required this.captureOverruns,
+    this.playoutQueueMs = 0,
     this.rttMs,
   });
 
@@ -66,6 +67,9 @@ final class CoreStats extends Equatable {
   /// Times captured audio was dropped.
   final int captureOverruns;
 
+  /// Decoded audio waiting for the speaker, in milliseconds.
+  final int playoutQueueMs;
+
   @override
   List<Object?> get props => [
     participants,
@@ -83,5 +87,6 @@ final class CoreStats extends Equatable {
     concealedFrames,
     playoutUnderruns,
     captureOverruns,
+    playoutQueueMs,
   ];
 }

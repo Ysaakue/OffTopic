@@ -32,7 +32,8 @@ std::string toString(JNIEnv* env, jstring text) {
 }
 
 jint nativeInit(JNIEnv* env, jobject /*self*/, jint role, jstring hostIp, jint controlPort,
-                jint audioPort, jstring displayName, jint bitrateBps, jboolean echoMode) {
+                jint audioPort, jstring displayName, jint bitrateBps, jboolean echoMode,
+                jint talkMode, jint vadSensitivity) {
   const std::string host = toString(env, hostIp);
   const std::string name = toString(env, displayName);
   vc_config config;
@@ -44,6 +45,8 @@ jint nativeInit(JNIEnv* env, jobject /*self*/, jint role, jstring hostIp, jint c
   config.audio_port = static_cast<uint16_t>(audioPort);
   config.bitrate_bps = bitrateBps;
   config.echo_mode = echoMode == JNI_TRUE ? 1 : 0;
+  config.talk_mode = talkMode;
+  config.vad_sensitivity = vadSensitivity;
   return vc_init(&config);
 }
 
@@ -70,7 +73,7 @@ extern "C" JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* /*reserved*/) {
   // Must match the `external fun`s of NativeVoiceCore.kt exactly: one entry
   // too many is a NoSuchMethodError.
   const JNINativeMethod methods[] = {
-      {"nativeInit", "(ILjava/lang/String;IILjava/lang/String;IZ)I",
+      {"nativeInit", "(ILjava/lang/String;IILjava/lang/String;IZII)I",
        reinterpret_cast<void*>(nativeInit)},
       {"nativeStart", "()I", reinterpret_cast<void*>(nativeStart)},
       {"nativeStop", "()V", reinterpret_cast<void*>(nativeStop)},

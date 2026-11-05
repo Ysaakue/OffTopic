@@ -7,7 +7,29 @@ int32_t toFlag(bool value) noexcept { return value ? 1 : 0; }
 
 std::string copyString(const char* text) { return text == nullptr ? std::string() : text; }
 
+// The C values are checked before the cast: a cast to an enum with a fixed
+// underlying type would wrap (e.g. 260 -> 4) instead of failing validation.
+template <typename Enum>
+std::optional<Enum> toEnum(int32_t value, Enum last) noexcept {
+  if (value < 0 || value > static_cast<int32_t>(last)) {
+    return std::nullopt;
+  }
+  return static_cast<Enum>(value);
+}
+
 }  // namespace
+
+std::optional<NoiseSuppression> toNoiseSuppression(int32_t value) noexcept {
+  return toEnum(value, NoiseSuppression::kVeryHigh);
+}
+
+std::optional<TalkMode> toTalkMode(int32_t value) noexcept {
+  return toEnum(value, TalkMode::kPushToTalk);
+}
+
+std::optional<VadSensitivity> toVadSensitivity(int32_t value) noexcept {
+  return toEnum(value, VadSensitivity::kHigh);
+}
 
 void fillDefaults(vc_config* out) noexcept {
   const CoreConfig defaults;
@@ -29,6 +51,12 @@ void fillDefaults(vc_config* out) noexcept {
   out->keepalive_interval_ms = defaults.keepaliveIntervalMs;
   out->peer_timeout_ms = defaults.peerTimeoutMs;
   out->echo_mode = toFlag(defaults.echoMode);
+  out->noise_suppression = static_cast<int32_t>(defaults.noiseSuppression);
+  out->automatic_gain = toFlag(defaults.automaticGain);
+  out->echo_cancellation = toFlag(defaults.echoCancellation);
+  out->talk_mode = static_cast<int32_t>(defaults.talkMode);
+  out->vad_sensitivity = static_cast<int32_t>(defaults.vadSensitivity);
+  out->vad_tail_ms = defaults.vadTailMs;
 }
 
 Expected<CoreConfig> toCoreConfig(const vc_config& in) {
@@ -53,6 +81,18 @@ Expected<CoreConfig> toCoreConfig(const vc_config& in) {
   config.keepaliveIntervalMs = in.keepalive_interval_ms;
   config.peerTimeoutMs = in.peer_timeout_ms;
   config.echoMode = in.echo_mode != 0;
+  const std::optional<NoiseSuppression> noiseSuppression = toNoiseSuppression(in.noise_suppression);
+  const std::optional<TalkMode> talkMode = toTalkMode(in.talk_mode);
+  const std::optional<VadSensitivity> vadSensitivity = toVadSensitivity(in.vad_sensitivity);
+  if (!noiseSuppression || !talkMode || !vadSensitivity) {
+    return Status::kInvalidArgument;
+  }
+  config.noiseSuppression = *noiseSuppression;
+  config.automaticGain = in.automatic_gain != 0;
+  config.echoCancellation = in.echo_cancellation != 0;
+  config.talkMode = *talkMode;
+  config.vadSensitivity = *vadSensitivity;
+  config.vadTailMs = in.vad_tail_ms;
   if (validate(config) != ConfigError::kNone) {
     return Status::kInvalidArgument;
   }
@@ -76,6 +116,7 @@ void toVcStats(const EngineStats& in, vc_stats* out) noexcept {
   out->concealed_frames = session.concealedFrames;
   out->playout_underruns = in.playoutUnderruns;
   out->capture_overruns = in.captureOverruns;
+  out->playout_queue_ms = in.playoutQueueMs;
 }
 
 }  // namespace voice_core::api

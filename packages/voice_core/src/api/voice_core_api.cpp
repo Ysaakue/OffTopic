@@ -25,6 +25,10 @@ static_assert(VC_ERR_AUDIO_DEVICE == toInt(Status::kAudioDevice));
 static_assert(VC_ERR_NETWORK == toInt(Status::kNetwork));
 static_assert(VC_ERR_CODEC == toInt(Status::kCodec));
 static_assert(VC_ERR_INTERNAL == toInt(Status::kInternal));
+static_assert(VC_NOISE_SUPPRESSION_VERY_HIGH ==
+              static_cast<int>(voice_core::NoiseSuppression::kVeryHigh));
+static_assert(VC_TALK_MODE_PUSH_TO_TALK == static_cast<int>(voice_core::TalkMode::kPushToTalk));
+static_assert(VC_VAD_SENSITIVITY_HIGH == static_cast<int>(voice_core::VadSensitivity::kHigh));
 
 constexpr float kMaxOutputGain = 4.0F;
 
@@ -71,6 +75,27 @@ void vc_set_output_gain(float gain) {
   if (std::isfinite(gain)) {
     engine().setOutputGain(std::clamp(gain, 0.0F, kMaxOutputGain));
   }
+}
+
+int32_t vc_set_talk_mode(int32_t mode) {
+  const std::optional<voice_core::TalkMode> talkMode = voice_core::api::toTalkMode(mode);
+  if (!talkMode) {
+    return VC_ERR_INVALID_ARGUMENT;
+  }
+  engine().setTalkMode(*talkMode);
+  return VC_OK;
+}
+
+void vc_set_push_to_talk(int32_t pressed) { engine().setPushToTalk(pressed != 0); }
+
+int32_t vc_set_vad_sensitivity(int32_t sensitivity) {
+  const std::optional<voice_core::VadSensitivity> vad =
+      voice_core::api::toVadSensitivity(sensitivity);
+  if (!vad) {
+    return VC_ERR_INVALID_ARGUMENT;
+  }
+  engine().setVadSensitivity(*vad);
+  return VC_OK;
 }
 
 int32_t vc_get_stats(vc_stats* out) {

@@ -7,6 +7,7 @@ import 'package:voice_core/src/generated/voice_core_bindings.g.dart';
 import 'package:voice_core/src/models/core_defaults.dart';
 import 'package:voice_core/src/models/core_event.dart';
 import 'package:voice_core/src/models/core_stats.dart';
+import 'package:voice_core/src/models/voice_controls.dart';
 import 'package:voice_core/src/native_mappers.dart';
 import 'package:voice_core/src/voice_core_client.dart';
 import 'package:voice_core/src/voice_core_exception.dart';
@@ -73,6 +74,20 @@ final class FfiVoiceCoreClient implements VoiceCoreClient {
   void setOutputGain(double gain) => _bindings.vc_set_output_gain(gain);
 
   @override
+  void setTalkMode(CoreTalkMode mode) =>
+      _check('vc_set_talk_mode', _bindings.vc_set_talk_mode(mode.native));
+
+  @override
+  void setPushToTalk({required bool pressed}) =>
+      _bindings.vc_set_push_to_talk(pressed ? 1 : 0);
+
+  @override
+  void setVadSensitivity(CoreVadSensitivity sensitivity) => _check(
+    'vc_set_vad_sensitivity',
+    _bindings.vc_set_vad_sensitivity(sensitivity.native),
+  );
+
+  @override
   Stream<CoreEvent> get events => _events.stream;
 
   @override
@@ -107,6 +122,12 @@ final class FfiVoiceCoreClient implements VoiceCoreClient {
       }
     } on VoiceCoreException catch (error) {
       _events.addError(error);
+    }
+  }
+
+  void _check(String function, int result) {
+    if (result != vc_result.VC_OK.value) {
+      throw VoiceCoreException('$function failed with $result.');
     }
   }
 

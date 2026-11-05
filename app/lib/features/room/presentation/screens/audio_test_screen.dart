@@ -3,14 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offtopic/core/theme/app_dimensions.dart';
 import 'package:offtopic/features/room/presentation/controllers/audio_test_state.dart';
 import 'package:offtopic/features/room/presentation/widgets/audio_test_form.dart';
+import 'package:offtopic/features/room/presentation/widgets/copy_report_button.dart';
 import 'package:offtopic/features/room/presentation/widgets/failure_message.dart';
 import 'package:offtopic/features/room/presentation/widgets/permission_denied_view.dart';
+import 'package:offtopic/features/room/presentation/widgets/push_to_talk_button.dart';
 import 'package:offtopic/features/room/presentation/widgets/session_stats_panel.dart';
+import 'package:offtopic/features/room/presentation/widgets/talk_status_panel.dart';
 import 'package:offtopic/features/room/room_providers.dart';
+import 'package:offtopic/features/settings/domain/entities/talk_settings.dart';
+import 'package:offtopic/features/settings/presentation/widgets/talk_settings_panel.dart';
+import 'package:offtopic/features/settings/settings_providers.dart';
 import 'package:offtopic/l10n/generated/app_localizations.dart';
 
-/// Phase 1: two phones, the host IP typed by hand, audio over the speaker or
-/// a wired headset, and the statistics needed to judge the call.
+/// Two phones, the host IP typed by hand (discovery arrives in phase 3), audio
+/// over the intercom, a headset or the speaker, the talk mode with its
+/// push-to-talk button, and the statistics needed to judge the call.
 class AudioTestScreen extends ConsumerWidget {
   const new({super.key});
 
@@ -19,6 +26,9 @@ class AudioTestScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(audioTestControllerProvider);
     final controller = ref.read(audioTestControllerProvider.notifier);
+    final pushToTalk =
+        ref.watch(talkSettingsControllerProvider).value?.settings.mode ==
+        TalkMode.pushToTalk;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.audioTestTitle)),
@@ -47,7 +57,22 @@ class AudioTestScreen extends ConsumerWidget {
               ),
               if (state case AudioTestFailed(:final failure))
                 FailureMessage(failure: failure),
-              if (state is AudioTestActive) const SessionStatsPanel(),
+              const SizedBox(height: AppDimensions.spacingSmall),
+              const CopyReportButton(),
+              if (state is AudioTestActive) ...[
+                const SizedBox(height: AppDimensions.spacingMedium),
+                const TalkStatusPanel(),
+                if (pushToTalk) ...[
+                  const SizedBox(height: AppDimensions.spacingMedium),
+                  PushToTalkButton(
+                    onChanged: (pressed) =>
+                        controller.setPushToTalk(pressed: pressed),
+                  ),
+                ],
+                const SessionStatsPanel(),
+              ],
+              const SizedBox(height: AppDimensions.spacingLarge),
+              const TalkSettingsPanel(),
             ],
           ],
         ),

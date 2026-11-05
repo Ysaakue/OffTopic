@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:voice_core/src/models/core_defaults.dart';
 import 'package:voice_core/src/models/core_event.dart';
 import 'package:voice_core/src/models/core_stats.dart';
+import 'package:voice_core/src/models/voice_controls.dart';
 import 'package:voice_core/src/voice_core_client.dart';
 import 'package:voice_core/src/voice_core_exception.dart';
 
@@ -53,6 +54,15 @@ final class FakeVoiceCoreClient implements VoiceCoreClient {
   /// Every gain passed to [setOutputGain].
   final List<double> outputGains = [];
 
+  /// Every mode passed to [setTalkMode].
+  final List<CoreTalkMode> talkModes = [];
+
+  /// Every state passed to [setPushToTalk].
+  final List<bool> pushToTalk = [];
+
+  /// Every sensitivity passed to [setVadSensitivity].
+  final List<CoreVadSensitivity> vadSensitivities = [];
+
   /// Whether [dispose] was called.
   bool disposed = false;
 
@@ -81,6 +91,16 @@ final class FakeVoiceCoreClient implements VoiceCoreClient {
 
   @override
   void setOutputGain(double gain) => outputGains.add(gain);
+
+  @override
+  void setTalkMode(CoreTalkMode mode) => talkModes.add(mode);
+
+  @override
+  void setPushToTalk({required bool pressed}) => pushToTalk.add(pressed);
+
+  @override
+  void setVadSensitivity(CoreVadSensitivity sensitivity) =>
+      vadSensitivities.add(sensitivity);
 
   @override
   Stream<CoreEvent> get events => _events.stream;

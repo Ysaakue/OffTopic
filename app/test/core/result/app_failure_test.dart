@@ -43,6 +43,16 @@ void main() {
     });
   });
 
+  group('LocalNetworkFailure', () {
+    test('keeps its message and compares by value', () {
+      const failure = LocalNetworkFailure('getifaddrs failed');
+
+      expect(failure.message, 'getifaddrs failed');
+      expect(failure, const LocalNetworkFailure('getifaddrs failed'));
+      expect(failure, isNot(const CoreFailure('getifaddrs failed')));
+    });
+  });
+
   group('RoomFailure', () {
     test('keeps its reason and message', () {
       const failure = RoomFailure(RoomFailureReason.network, 'no socket');

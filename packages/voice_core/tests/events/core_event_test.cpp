@@ -10,6 +10,12 @@ namespace {
 TEST(CoreEventTest, MapsTypesToTheCAbi) {
   EXPECT_EQ(eventType(StateChangedEvent{}), VC_EVENT_STATE_CHANGED);
   EXPECT_EQ(eventType(LinkChangedEvent{}), VC_EVENT_LINK_CHANGED);
+  EXPECT_EQ(eventType(TalkingChangedEvent{}), VC_EVENT_TALKING_CHANGED);
+}
+
+TEST(CoreEventTest, SerializesTalkingChanges) {
+  EXPECT_EQ(serializeEvent(TalkingChangedEvent{true}), R"({"talking":true})");
+  EXPECT_EQ(serializeEvent(TalkingChangedEvent{false}), R"({"talking":false})");
 }
 
 TEST(CoreEventTest, SerializesStateChanges) {

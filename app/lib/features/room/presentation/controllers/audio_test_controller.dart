@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offtopic/core/result/app_failure.dart';
 import 'package:offtopic/core/result/result.dart';
@@ -5,11 +7,31 @@ import 'package:offtopic/features/room/domain/entities/room_request.dart';
 import 'package:offtopic/features/room/presentation/controllers/audio_test_state.dart';
 import 'package:offtopic/features/room/room_providers.dart';
 
-/// Drives the phase 1 audio test: idle -> starting -> active -> stopping,
-/// with the permission and failure paths.
+/// Drives the audio test: idle -> starting -> active -> stopping, with the
+/// permission and failure paths, and the phone ending the room's call.
 final class AudioTestController extends Notifier<AudioTestState> {
   @override
-  AudioTestState build() => const AudioTestIdle();
+  AudioTestState build() {
+    final stops = ref
+        .read(roomRepositoryProvider)
+        .watchSessionStopped()
+        .listen((_) => _stoppedElsewhere());
+    ref.onDispose(() => unawaited(stops.cancel()));
+    return const AudioTestIdle();
+  }
+
+  // The session stopped while running: this app did not ask (that goes
+  // through Stopping), so the phone ended the call.
+  void _stoppedElsewhere() {
+    if (state is AudioTestActive) {
+      state = const AudioTestFailed(
+        RoomFailure(
+          RoomFailureReason.endedBySystem,
+          'The phone ended the call.',
+        ),
+      );
+    }
+  }
 
   /// Starts a room; ignored while one is starting, running or stopping.
   Future<void> start(RoomRequest request) async {
@@ -43,6 +65,13 @@ final class AudioTestController extends Notifier<AudioTestState> {
       Success() => const AudioTestIdle(),
       Failure(:final failure) => AudioTestFailed(failure),
     };
+  }
+
+  /// Push to talk: true while the button is held; ignored without a room.
+  void setPushToTalk({required bool pressed}) {
+    if (state is AudioTestActive) {
+      ref.read(pushToTalkProvider).call(pressed: pressed);
+    }
   }
 
   /// Opens the app settings, where a refused permission can be granted.

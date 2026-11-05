@@ -285,8 +285,8 @@ int main(int argc, char** argv) {
     if (step % kStepsPerFrame == 0) {
       const int frame = step / kStepsPerFrame;
       const bool speak = frame % kFramesPerBurst == kFramesPerBurst / 2;
-      clientSession.onCaptureFrame(speak ? burst.data() : silence.data());
-      hostSession.onCaptureFrame(silence.data());  // echo mode: not sent
+      clientSession.onCaptureFrame(speak ? burst.data() : silence.data(), true);
+      hostSession.onCaptureFrame(silence.data(), true);  // echo mode: not sent
       if (speak) {
         ++bursts;
         burstFrame = frame;

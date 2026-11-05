@@ -382,7 +382,7 @@ abstract class AppLocalizations {
   /// Why the permissions are needed.
   ///
   /// In en, this message translates to:
-  /// **'OffTopic needs the microphone and, from Android 17, access to devices on the local network to talk over the hotspot.'**
+  /// **'OffTopic needs the microphone, the connection to your Bluetooth intercom and, from Android 17, access to devices on the local network to talk over the hotspot.'**
   String get permissionDeniedBody;
 
   /// Button that opens the app settings.
@@ -390,6 +390,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open settings'**
   String get permissionOpenSettings;
+
+  /// Title of the choice between the voice detector and push to talk.
+  ///
+  /// In en, this message translates to:
+  /// **'Talk mode'**
+  String get talkModeLabel;
+
+  /// Talk mode: the microphone opens when the rider speaks.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get talkModeVoice;
+
+  /// Talk mode: the microphone opens only while a button is held.
+  ///
+  /// In en, this message translates to:
+  /// **'Push to talk'**
+  String get talkModePushToTalk;
+
+  /// Title of the voice detector sensitivity choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice detection'**
+  String get vadSensitivityLabel;
+
+  /// Voice detector sensitivity: needs clear speech, best in strong wind.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get vadSensitivityLow;
+
+  /// Voice detector sensitivity: the default.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get vadSensitivityMedium;
+
+  /// Voice detector sensitivity: also opens on quiet speech.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get vadSensitivityHigh;
+
+  /// Shown when a talk setting could not be stored on the phone.
+  ///
+  /// In en, this message translates to:
+  /// **'This setting could not be saved: it applies to this room only.'**
+  String get talkSettingsSaveFailed;
+
+  /// Label of the big push-to-talk button while it is released.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to talk'**
+  String get pushToTalkHold;
+
+  /// Label of the big push-to-talk button while it is held.
+  ///
+  /// In en, this message translates to:
+  /// **'Talking…'**
+  String get pushToTalkTalking;
+
+  /// Where the room is heard and spoken into.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio: {route}'**
+  String audioRouteLabel(String route);
+
+  /// Audio route: the rider's Bluetooth intercom.
+  ///
+  /// In en, this message translates to:
+  /// **'Intercom (Bluetooth)'**
+  String get audioRouteIntercom;
+
+  /// Audio route: a wired or USB headset.
+  ///
+  /// In en, this message translates to:
+  /// **'Headset'**
+  String get audioRouteHeadset;
+
+  /// Audio route: the phone's loudspeaker.
+  ///
+  /// In en, this message translates to:
+  /// **'Loudspeaker'**
+  String get audioRouteSpeaker;
+
+  /// Audio route: the phone's earpiece.
+  ///
+  /// In en, this message translates to:
+  /// **'Earpiece'**
+  String get audioRouteEarpiece;
+
+  /// Audio route not known yet.
+  ///
+  /// In en, this message translates to:
+  /// **'not routed yet'**
+  String get audioRouteUnknown;
+
+  /// The local microphone is being sent to the room.
+  ///
+  /// In en, this message translates to:
+  /// **'Your microphone is on the air'**
+  String get talkingOnAir;
+
+  /// The local microphone is not being sent (no voice, button released or muted).
+  ///
+  /// In en, this message translates to:
+  /// **'Your microphone is quiet'**
+  String get talkingQuiet;
+
+  /// The room is registered as a call with the phone, so the Bluetooth intercom treats it like a phone call.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone call mode: the intercom sees a call'**
+  String get audioCallModeSystem;
+
+  /// The phone did not accept the room as a call; the audio is only routed.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct audio routing (the phone refused the call mode)'**
+  String get audioCallModeDirect;
+
+  /// Shown when the system ended the room's call.
+  ///
+  /// In en, this message translates to:
+  /// **'The phone ended the room: another call, or the headset\'s hang-up button.'**
+  String get audioTestErrorEndedBySystem;
+
+  /// Button that copies the room's report (delay, losses, route) to the clipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy report'**
+  String get reportCopy;
+
+  /// Confirmation after copying the room's report.
+  ///
+  /// In en, this message translates to:
+  /// **'Report copied: paste it in the chat with the developers.'**
+  String get reportCopied;
+
+  /// Heading above the host phone's own IP addresses.
+  ///
+  /// In en, this message translates to:
+  /// **'Your IP: the other riders type it to join'**
+  String get hostAddressTitle;
+
+  /// One of the host phone's IP addresses and the network it belongs to, e.g. 'Hotspot: 192.168.43.1'.
+  ///
+  /// In en, this message translates to:
+  /// **'{network}: {address}'**
+  String hostAddressEntry(String network, String address);
+
+  /// Network kind: this phone's own Wi-Fi hotspot.
+  ///
+  /// In en, this message translates to:
+  /// **'Hotspot'**
+  String get hostAddressHotspot;
+
+  /// Network kind: a Wi-Fi network this phone joined.
+  ///
+  /// In en, this message translates to:
+  /// **'Wi-Fi'**
+  String get hostAddressWifi;
+
+  /// Network kind: another local network (USB or Ethernet tethering).
+  ///
+  /// In en, this message translates to:
+  /// **'Other network'**
+  String get hostAddressOther;
+
+  /// The host phone has no address the other riders can reach.
+  ///
+  /// In en, this message translates to:
+  /// **'No local network yet: turn on this phone\'s hotspot.'**
+  String get hostAddressNone;
+
+  /// The phone's network interfaces could not be listed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read this phone\'s IP.'**
+  String get hostAddressUnavailable;
+
+  /// Button that reads the host phone's IP addresses again.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh IP'**
+  String get hostAddressRefresh;
 }
 
 class _AppLocalizationsDelegate

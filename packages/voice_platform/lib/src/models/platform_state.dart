@@ -9,6 +9,7 @@ final class PlatformState extends Equatable {
     required this.serviceRunning,
     required this.audioRoute,
     required this.wifiState,
+    this.systemCall = false,
   });
 
   /// State before any room is started.
@@ -27,6 +28,15 @@ final class PlatformState extends Equatable {
   /// Current Wi-Fi state.
   final WifiState wifiState;
 
+  /// Whether the room is registered as a call with the system (Telecom), so
+  /// headsets see a real call; false when it is only routed.
+  final bool systemCall;
+
   @override
-  List<Object?> get props => [serviceRunning, audioRoute, wifiState];
+  List<Object?> get props => [
+    serviceRunning,
+    audioRoute,
+    wifiState,
+    systemCall,
+  ];
 }

@@ -7,3 +7,9 @@
 [submodule "packages/voice_core/third_party/opus"]
 	path = packages/voice_core/third_party/opus
 	url = https://github.com/xiph/opus.git
+[submodule "packages/voice_core/third_party/webrtc-audio-processing"]
+	path = packages/voice_core/third_party/webrtc-audio-processing
+	url = https://gitlab.freedesktop.org/pulseaudio/webrtc-audio-processing.git
+[submodule "packages/voice_core/third_party/abseil-cpp"]
+	path = packages/voice_core/third_party/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git

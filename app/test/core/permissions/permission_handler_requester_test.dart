@@ -44,6 +44,7 @@ void main() {
     expect(platform.requested, [
       Permission.microphone,
       Permission.accessLocalNetwork,
+      Permission.bluetoothConnect,
     ]);
   });
 

@@ -27,6 +27,11 @@ void main() {
         const RoomFailure(RoomFailureReason.unavailable, ''),
         'The voice core is not available.',
       ),
+      (
+        const RoomFailure(RoomFailureReason.endedBySystem, ''),
+        "The phone ended the room: another call, or the headset's "
+            'hang-up button.',
+      ),
       (const CoreFailure('x'), 'The voice core is not available.'),
     ]) {
       await tester.pumpLocalized(FailureMessage(failure: failure));

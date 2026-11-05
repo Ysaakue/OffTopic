@@ -47,8 +47,8 @@ Desktop build trees live in `~/.cache/offtopic/voice_core/<preset>` (fast ext4).
 | miniaudio | `0.11.26` | 1 | added (low-level device API only: `MA_NO_ENGINE` and friends) |
 | opus | `v1.6.1` | 1 | added (DRED/OSCE off: they need downloaded model files) |
 | nlohmann/json | `v3.12.0` | 3 | planned |
-| webrtc-audio-processing | `v2.1` | 2 | planned (Meson upstream; needs a CMake wrapper) |
-| abseil-cpp | `20260817.0` | 2 | planned (fallback: newest LTS that builds with webrtc-apm 2.1) |
+| webrtc-audio-processing | `v2.1` | 2 | added (Meson upstream: built by our `cmake/webrtc_apm.cmake`, which mirrors its source lists) |
+| abseil-cpp | `20250127.2` | 2 | added: the newest LTS that builds webrtc-apm 2.1 (from 20250512 on, `absl::Nullable`/`absl::Nonnull` are gone) |
 | oboe | `1.11.0` | 2 | only if miniaudio fails on Bluetooth SCO |
 
 Nothing is downloaded during the build. After cloning: `git submodule update --init --recursive`.
@@ -70,15 +70,18 @@ Nothing is downloaded during the build. After cloning: `git submodule update --i
 | `permission_handler` | ^13.0.2 | app (Android 14.1.1 implementation: `Permission.accessLocalNetwork` for API 37) |
 | `permission_handler_platform_interface` (dev) | ^4.4.1 | app (fake platform in tests) |
 | `plugin_platform_interface` (dev) | ^2.1.8 | app (`MockPlatformInterfaceMixin`) |
+| `shared_preferences` | ^2.5.6 | app (talk settings; asynchronous API) |
+| `shared_preferences_platform_interface` (dev) | ^2.4.2 | app (in-memory store in tests) |
 
-Added in later phases: `shared_preferences` ^2.5.6, `mobile_scanner` ^7.4.2,
-`qr` ^4.0.1 (replaces the unmaintained `qr_flutter`).
+Added in later phases: `mobile_scanner` ^7.4.2, `qr` ^4.0.1 (replaces the
+unmaintained `qr_flutter`).
 
 ## Kotlin / Gradle (`packages/voice_platform/android`)
 
 | Dependency | Version |
 | --- | --- |
 | kotlinx-coroutines-android (needed by Pigeon `suspend` host methods) | 1.11.0 |
+| androidx.core:core-telecom (the room as a self-managed call; stable 1.1.0 of 2026-11-04) | 1.1.0 |
 | JUnit | 4.13.2 |
 | kotlin-test-junit | KGP 2.4.0 |
 | MockK | 1.14.11 |

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:offtopic/core/di/infrastructure_providers.dart';
+import 'package:offtopic/core/network/local_interfaces.dart';
 
 void main() {
   group('infrastructure providers', () {
@@ -34,6 +35,15 @@ void main() {
         ),
       );
     });
+  });
+
+  test('the network interfaces come from dart:io by default', () {
+    final container = ProviderContainer.test();
+
+    expect(
+      container.read(localInterfacesProvider),
+      equals(listLocalInterfaces),
+    );
   });
 
   test('noAutomaticRetry never schedules a retry', () {

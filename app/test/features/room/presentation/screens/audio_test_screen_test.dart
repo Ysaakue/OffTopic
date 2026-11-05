@@ -5,11 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:offtopic/core/di/infrastructure_providers.dart';
 import 'package:offtopic/core/permissions/permission_requester.dart';
 import 'package:offtopic/features/room/presentation/screens/audio_test_screen.dart';
+import 'package:offtopic/features/settings/data/repositories/settings_repository_impl.dart';
 import 'package:voice_core/testing.dart';
 import 'package:voice_core/voice_core.dart';
 import 'package:voice_platform/testing.dart';
 import 'package:voice_platform/voice_platform.dart';
 
+import '../../../../helpers/fake_key_value_store.dart';
 import '../../../../helpers/fake_permission_requester.dart';
 import '../../../../helpers/pump_app.dart';
 import '../../../../helpers/room_fixtures.dart';
@@ -18,11 +20,13 @@ void main() {
   late FakeVoicePlatformGateway platform;
   late FakeVoiceCoreClient core;
   late FakePermissionRequester permissions;
+  late FakeKeyValueStore store;
 
   setUp(() {
     platform = FakeVoicePlatformGateway();
     core = FakeVoiceCoreClient();
     permissions = FakePermissionRequester();
+    store = FakeKeyValueStore();
   });
 
   tearDown(() => unawaited(platform.dispose()));
@@ -36,6 +40,12 @@ void main() {
           voicePlatformGatewayProvider.overrideWithValue(platform),
           voiceCoreClientProvider.overrideWithValue(core),
           permissionRequesterProvider.overrideWithValue(permissions),
+          keyValueStoreProvider.overrideWithValue(store),
+          localInterfacesProvider.overrideWithValue(
+            () async => [
+              (name: 'swlan0', ipv4: ['192.168.43.1']),
+            ],
+          ),
         ],
       );
 
@@ -147,11 +157,44 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('in voice mode the room shows its route and no button', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+
+    await join(tester, '192.168.43.1');
+
+    expect(find.byKey(const Key('talk.route')), findsOneWidget);
+    expect(find.byKey(const Key('talk.talking')), findsOneWidget);
+    expect(find.byKey(const Key('talk.pushToTalk')), findsNothing);
+    expect(platform.activeRoom?.config.talkMode, TalkMode.voice);
+  });
+
+  testWidgets('in push to talk, holding the button sends the microphone', (
+    tester,
+  ) async {
+    store.values[SettingsRepositoryImpl.talkModeKey] = 'pushToTalk';
+    await pumpScreen(tester);
+    await join(tester, '192.168.43.1');
+    final button = find.byKey(const Key('talk.pushToTalk'));
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+
+    final gesture = await tester.startGesture(tester.getCenter(button));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+
+    expect(core.pushToTalk, [true, false]);
+    expect(platform.activeRoom?.config.talkMode, TalkMode.pushToTalk);
+  });
+
   testWidgets('hosts with echo mode', (tester) async {
     await pumpScreen(tester);
 
     await tester.tap(find.text('Host'));
     await tester.pumpAndSettle();
+    expect(find.text('Hotspot: 192.168.43.1'), findsOneWidget);
     await tester.tap(find.byKey(const Key('audioTest.echo')));
     await tester.pump();
     await tester.tap(find.byKey(const Key('audioTest.start')));

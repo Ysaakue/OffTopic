@@ -153,6 +153,20 @@ ConfigError validateTiming(const CoreConfig& config) {
   if (!inRange(config.maxParticipants, kMinParticipants, kMaxParticipants)) {
     return ConfigError::kMaxParticipants;
   }
+  return ConfigError::kNone;
+}
+
+// The enums arrive from the C API as integers, so their range is checked too.
+ConfigError validateVoice(const CoreConfig& config) {
+  if (config.noiseSuppression > NoiseSuppression::kVeryHigh) {
+    return ConfigError::kNoiseSuppression;
+  }
+  if (config.talkMode > TalkMode::kPushToTalk) {
+    return ConfigError::kTalkMode;
+  }
+  if (config.vadSensitivity > VadSensitivity::kHigh) {
+    return ConfigError::kVadSensitivity;
+  }
   if (!inRange(config.vadTailMs, 0, kMaxVadTailMs)) {
     return ConfigError::kVadTail;
   }
@@ -162,7 +176,8 @@ ConfigError validateTiming(const CoreConfig& config) {
 }  // namespace
 
 ConfigError validate(const CoreConfig& config) {
-  for (const auto check : {validateSession, validateCodec, validateBuffers, validateTiming}) {
+  for (const auto check :
+       {validateSession, validateCodec, validateBuffers, validateTiming, validateVoice}) {
     const ConfigError error = check(config);
     if (error != ConfigError::kNone) {
       return error;

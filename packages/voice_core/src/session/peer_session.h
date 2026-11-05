@@ -56,8 +56,9 @@ class PeerSession {
                                                        IDatagramSocket& socket,
                                                        IEventSink& events);
 
-  /// One captured frame (frameSamples samples).
-  void onCaptureFrame(const int16_t* pcm) noexcept;
+  /// One captured frame (frameSamples samples). `transmit` is the voice gate's
+  /// decision (detector, push to talk, mute); the level is measured either way.
+  void onCaptureFrame(const int16_t* pcm, bool transmit) noexcept;
 
   void onDatagram(const uint8_t* data, std::size_t size, const Endpoint& from,
                   uint64_t arrivalUs) noexcept;
@@ -68,7 +69,6 @@ class PeerSession {
   /// Keepalives, link timeout and the loss window. Call at least every frame.
   void tick(uint64_t nowUs);
 
-  void setMuted(bool muted) noexcept { muted_ = muted; }
   void setOutputGain(float gain) noexcept { outputGain_ = gain; }
 
   [[nodiscard]] SessionStats stats() const noexcept;
@@ -106,7 +106,6 @@ class PeerSession {
   uint16_t seq_ = 0;
   uint32_t timestamp_ = 0;
   bool inGap_ = true;  // the next sent frame starts a talkspurt
-  bool muted_ = false;
   float outputGain_ = 1.0F;
   float inputLevel_ = 0.0F;
 

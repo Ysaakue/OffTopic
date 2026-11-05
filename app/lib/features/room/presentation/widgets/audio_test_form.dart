@@ -3,6 +3,7 @@ import 'package:offtopic/core/theme/app_dimensions.dart';
 import 'package:offtopic/features/room/domain/entities/room_request.dart';
 import 'package:offtopic/features/room/domain/value_objects/display_name.dart';
 import 'package:offtopic/features/room/domain/value_objects/host_address.dart';
+import 'package:offtopic/features/room/presentation/widgets/host_address_panel.dart';
 import 'package:offtopic/l10n/generated/app_localizations.dart';
 
 enum _Role { host, join }
@@ -78,7 +79,8 @@ class _AudioTestFormState extends State<AudioTestForm> {
             ),
             onChanged: (_) => setState(() => _showHostError = false),
           )
-        else
+        else ...[
+          const HostAddressPanel(key: Key('audioTest.hostAddresses')),
           SwitchListTile(
             key: const Key('audioTest.echo'),
             title: Text(l10n.audioTestEchoMode),
@@ -88,6 +90,7 @@ class _AudioTestFormState extends State<AudioTestForm> {
                 ? (value) => setState(() => _echoMode = value)
                 : null,
           ),
+        ],
         const SizedBox(height: AppDimensions.spacingLarge),
         if (widget.running)
           FilledButton(

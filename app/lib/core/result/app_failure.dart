@@ -42,6 +42,16 @@ final class PermissionFailure extends AppFailure {
   List<Object?> get props => [message, permanentlyDenied];
 }
 
+/// The phone's storage could not save a preference.
+final class StorageFailure extends AppFailure {
+  const new(super.message);
+}
+
+/// The phone's own network interfaces could not be listed.
+final class LocalNetworkFailure extends AppFailure {
+  const new(super.message);
+}
+
 /// Why starting or controlling the room failed.
 enum RoomFailureReason {
   /// A room is already running.
@@ -58,6 +68,10 @@ enum RoomFailureReason {
 
   /// The platform or the core failed in another way.
   unavailable,
+
+  /// The phone ended the room's call: another call, or a headset's hang-up
+  /// button.
+  endedBySystem,
 }
 
 /// Starting, stopping or controlling the room failed.

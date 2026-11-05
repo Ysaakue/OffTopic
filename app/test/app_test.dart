@@ -8,6 +8,7 @@ import 'package:offtopic/features/room/presentation/screens/audio_test_screen.da
 import 'package:voice_core/testing.dart';
 import 'package:voice_platform/testing.dart';
 
+import 'helpers/fake_key_value_store.dart';
 import 'helpers/fixtures.dart';
 
 void main() {
@@ -25,6 +26,7 @@ void main() {
           FakeVoiceCoreClient(version: '0.1.0'),
         ),
         voicePlatformGatewayProvider.overrideWithValue(platform),
+        keyValueStoreProvider.overrideWithValue(FakeKeyValueStore()),
       ],
       // A runtime key makes the constructor run at runtime; a const-only
       // instance is built at compile time and coverage may miss it.

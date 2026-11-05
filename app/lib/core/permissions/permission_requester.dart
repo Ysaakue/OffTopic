@@ -5,6 +5,9 @@ enum AppPermission {
 
   /// ACCESS_LOCAL_NETWORK on Android 17 (API 37) and later.
   localNetwork,
+
+  /// BLUETOOTH_CONNECT on Android 12 (API 31) and later: the intercom's audio.
+  bluetoothConnect,
 }
 
 /// What the system answered for one permission.

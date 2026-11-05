@@ -199,6 +199,19 @@ enum AudioRouteMessage: Int, CaseIterable {
   case earpiece = 4
 }
 
+/// How the microphone opens: voice detector or push to talk.
+enum TalkModeMessage: Int, CaseIterable {
+  case voice = 0
+  case pushToTalk = 1
+}
+
+/// How easily the voice detector opens the microphone.
+enum VadSensitivityMessage: Int, CaseIterable {
+  case low = 0
+  case medium = 1
+  case high = 2
+}
+
 /// Wi-Fi state as seen by the platform layer.
 enum WifiStateMessage: Int, CaseIterable {
   case unknown = 0
@@ -217,6 +230,11 @@ struct RoomConfigMessage: Hashable, CustomStringConvertible {
   var bitrateBps: Int64
   /// Host only: return every audio packet to its sender (round-trip test).
   var echoMode: Bool
+  /// How the microphone opens when the room starts (Dart changes it later
+  /// through FFI).
+  var talkMode: TalkModeMessage
+  /// The voice detector's sensitivity when the room starts.
+  var vadSensitivity: VadSensitivityMessage
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -228,6 +246,8 @@ struct RoomConfigMessage: Hashable, CustomStringConvertible {
     let audioPort = pigeonVar_list[4] as! Int64
     let bitrateBps = pigeonVar_list[5] as! Int64
     let echoMode = pigeonVar_list[6] as! Bool
+    let talkMode = pigeonVar_list[7] as! TalkModeMessage
+    let vadSensitivity = pigeonVar_list[8] as! VadSensitivityMessage
 
     return RoomConfigMessage(
       role: role,
@@ -236,7 +256,9 @@ struct RoomConfigMessage: Hashable, CustomStringConvertible {
       controlPort: controlPort,
       audioPort: audioPort,
       bitrateBps: bitrateBps,
-      echoMode: echoMode
+      echoMode: echoMode,
+      talkMode: talkMode,
+      vadSensitivity: vadSensitivity
     )
   }
   func toList() -> [Any?] {
@@ -248,13 +270,15 @@ struct RoomConfigMessage: Hashable, CustomStringConvertible {
       audioPort,
       bitrateBps,
       echoMode,
+      talkMode,
+      vadSensitivity,
     ]
   }
   static func == (lhs: RoomConfigMessage, rhs: RoomConfigMessage) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return VoicePlatformApiPigeonInternal.deepEquals(lhs.role, rhs.role) && VoicePlatformApiPigeonInternal.deepEquals(lhs.hostIp, rhs.hostIp) && VoicePlatformApiPigeonInternal.deepEquals(lhs.displayName, rhs.displayName) && VoicePlatformApiPigeonInternal.deepEquals(lhs.controlPort, rhs.controlPort) && VoicePlatformApiPigeonInternal.deepEquals(lhs.audioPort, rhs.audioPort) && VoicePlatformApiPigeonInternal.deepEquals(lhs.bitrateBps, rhs.bitrateBps) && VoicePlatformApiPigeonInternal.deepEquals(lhs.echoMode, rhs.echoMode)
+    return VoicePlatformApiPigeonInternal.deepEquals(lhs.role, rhs.role) && VoicePlatformApiPigeonInternal.deepEquals(lhs.hostIp, rhs.hostIp) && VoicePlatformApiPigeonInternal.deepEquals(lhs.displayName, rhs.displayName) && VoicePlatformApiPigeonInternal.deepEquals(lhs.controlPort, rhs.controlPort) && VoicePlatformApiPigeonInternal.deepEquals(lhs.audioPort, rhs.audioPort) && VoicePlatformApiPigeonInternal.deepEquals(lhs.bitrateBps, rhs.bitrateBps) && VoicePlatformApiPigeonInternal.deepEquals(lhs.echoMode, rhs.echoMode) && VoicePlatformApiPigeonInternal.deepEquals(lhs.talkMode, rhs.talkMode) && VoicePlatformApiPigeonInternal.deepEquals(lhs.vadSensitivity, rhs.vadSensitivity)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -266,10 +290,12 @@ struct RoomConfigMessage: Hashable, CustomStringConvertible {
     VoicePlatformApiPigeonInternal.deepHash(value: audioPort, hasher: &hasher)
     VoicePlatformApiPigeonInternal.deepHash(value: bitrateBps, hasher: &hasher)
     VoicePlatformApiPigeonInternal.deepHash(value: echoMode, hasher: &hasher)
+    VoicePlatformApiPigeonInternal.deepHash(value: talkMode, hasher: &hasher)
+    VoicePlatformApiPigeonInternal.deepHash(value: vadSensitivity, hasher: &hasher)
   }
 
   public var description: String {
-    return "RoomConfigMessage(role: \(String(describing: role)), hostIp: \(String(describing: hostIp)), displayName: \(String(describing: displayName)), controlPort: \(String(describing: controlPort)), audioPort: \(String(describing: audioPort)), bitrateBps: \(String(describing: bitrateBps)), echoMode: \(String(describing: echoMode)))"
+    return "RoomConfigMessage(role: \(String(describing: role)), hostIp: \(String(describing: hostIp)), displayName: \(String(describing: displayName)), controlPort: \(String(describing: controlPort)), audioPort: \(String(describing: audioPort)), bitrateBps: \(String(describing: bitrateBps)), echoMode: \(String(describing: echoMode)), talkMode: \(String(describing: talkMode)), vadSensitivity: \(String(describing: vadSensitivity)))"
   }
 }
 
@@ -431,6 +457,9 @@ struct PlatformStateMessage: Hashable, CustomStringConvertible {
   var serviceRunning: Bool
   var audioRoute: AudioRouteMessage
   var wifiState: WifiStateMessage
+  /// The room is registered as a call with the system (Telecom), so headsets
+  /// see a real call; false when it is only routed.
+  var systemCall: Bool
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -438,11 +467,13 @@ struct PlatformStateMessage: Hashable, CustomStringConvertible {
     let serviceRunning = pigeonVar_list[0] as! Bool
     let audioRoute = pigeonVar_list[1] as! AudioRouteMessage
     let wifiState = pigeonVar_list[2] as! WifiStateMessage
+    let systemCall = pigeonVar_list[3] as! Bool
 
     return PlatformStateMessage(
       serviceRunning: serviceRunning,
       audioRoute: audioRoute,
-      wifiState: wifiState
+      wifiState: wifiState,
+      systemCall: systemCall
     )
   }
   func toList() -> [Any?] {
@@ -450,13 +481,14 @@ struct PlatformStateMessage: Hashable, CustomStringConvertible {
       serviceRunning,
       audioRoute,
       wifiState,
+      systemCall,
     ]
   }
   static func == (lhs: PlatformStateMessage, rhs: PlatformStateMessage) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return VoicePlatformApiPigeonInternal.deepEquals(lhs.serviceRunning, rhs.serviceRunning) && VoicePlatformApiPigeonInternal.deepEquals(lhs.audioRoute, rhs.audioRoute) && VoicePlatformApiPigeonInternal.deepEquals(lhs.wifiState, rhs.wifiState)
+    return VoicePlatformApiPigeonInternal.deepEquals(lhs.serviceRunning, rhs.serviceRunning) && VoicePlatformApiPigeonInternal.deepEquals(lhs.audioRoute, rhs.audioRoute) && VoicePlatformApiPigeonInternal.deepEquals(lhs.wifiState, rhs.wifiState) && VoicePlatformApiPigeonInternal.deepEquals(lhs.systemCall, rhs.systemCall)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -464,10 +496,11 @@ struct PlatformStateMessage: Hashable, CustomStringConvertible {
     VoicePlatformApiPigeonInternal.deepHash(value: serviceRunning, hasher: &hasher)
     VoicePlatformApiPigeonInternal.deepHash(value: audioRoute, hasher: &hasher)
     VoicePlatformApiPigeonInternal.deepHash(value: wifiState, hasher: &hasher)
+    VoicePlatformApiPigeonInternal.deepHash(value: systemCall, hasher: &hasher)
   }
 
   public var description: String {
-    return "PlatformStateMessage(serviceRunning: \(String(describing: serviceRunning)), audioRoute: \(String(describing: audioRoute)), wifiState: \(String(describing: wifiState)))"
+    return "PlatformStateMessage(serviceRunning: \(String(describing: serviceRunning)), audioRoute: \(String(describing: audioRoute)), wifiState: \(String(describing: wifiState)), systemCall: \(String(describing: systemCall)))"
   }
 }
 
@@ -489,18 +522,30 @@ private class VoicePlatformApiPigeonCodecReader: FlutterStandardReader {
     case 131:
       let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
       if let enumResultAsInt = enumResultAsInt {
-        return WifiStateMessage(rawValue: enumResultAsInt)
+        return TalkModeMessage(rawValue: enumResultAsInt)
       }
       return nil
     case 132:
-      return RoomConfigMessage.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return VadSensitivityMessage(rawValue: enumResultAsInt)
+      }
+      return nil
     case 133:
-      return PlatformCapabilitiesMessage.fromList(self.readValue() as! [Any?])
+      let enumResultAsInt: Int? = nilOrValue(self.readValue() as! Int?)
+      if let enumResultAsInt = enumResultAsInt {
+        return WifiStateMessage(rawValue: enumResultAsInt)
+      }
+      return nil
     case 134:
-      return PlatformInfoMessage.fromList(self.readValue() as! [Any?])
+      return RoomConfigMessage.fromList(self.readValue() as! [Any?])
     case 135:
-      return ActiveRoomMessage.fromList(self.readValue() as! [Any?])
+      return PlatformCapabilitiesMessage.fromList(self.readValue() as! [Any?])
     case 136:
+      return PlatformInfoMessage.fromList(self.readValue() as! [Any?])
+    case 137:
+      return ActiveRoomMessage.fromList(self.readValue() as! [Any?])
+    case 138:
       return PlatformStateMessage.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
@@ -516,23 +561,29 @@ private class VoicePlatformApiPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? AudioRouteMessage {
       super.writeByte(130)
       super.writeValue(value.rawValue)
-    } else if let value = value as? WifiStateMessage {
+    } else if let value = value as? TalkModeMessage {
       super.writeByte(131)
       super.writeValue(value.rawValue)
-    } else if let value = value as? RoomConfigMessage {
+    } else if let value = value as? VadSensitivityMessage {
       super.writeByte(132)
-      super.writeValue(value.toList())
-    } else if let value = value as? PlatformCapabilitiesMessage {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? WifiStateMessage {
       super.writeByte(133)
-      super.writeValue(value.toList())
-    } else if let value = value as? PlatformInfoMessage {
+      super.writeValue(value.rawValue)
+    } else if let value = value as? RoomConfigMessage {
       super.writeByte(134)
       super.writeValue(value.toList())
-    } else if let value = value as? ActiveRoomMessage {
+    } else if let value = value as? PlatformCapabilitiesMessage {
       super.writeByte(135)
       super.writeValue(value.toList())
-    } else if let value = value as? PlatformStateMessage {
+    } else if let value = value as? PlatformInfoMessage {
       super.writeByte(136)
+      super.writeValue(value.toList())
+    } else if let value = value as? ActiveRoomMessage {
+      super.writeByte(137)
+      super.writeValue(value.toList())
+    } else if let value = value as? PlatformStateMessage {
+      super.writeByte(138)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)

@@ -6,6 +6,8 @@
 
 #include "audio/audio_pipelines.h"
 #include "audio/spsc_ring_buffer.h"
+#include "dsp/voice_gate.h"
+#include "engine/capture_chain.h"
 #include "engine/media_loop.h"
 #include "engine/network_pump.h"
 
@@ -30,22 +32,29 @@ constexpr int kDeviceStartAttempts = 2;
 // dependency order, so they are built and destroyed in the right order.
 struct VoiceEngine::Running {
   Running(const CoreConfig& sessionConfig, std::unique_ptr<IDatagramSocket> openedSocket,
-          std::unique_ptr<PeerSession> createdSession, const IClock& clock)
+          std::unique_ptr<PeerSession> createdSession, VoiceProcessing createdProcessing,
+          IEventSink& events, const IClock& clock)
       : config(sessionConfig),
         socket(std::move(openedSocket)),
         session(std::move(createdSession)),
+        processing(std::move(createdProcessing)),
+        gate(config),
+        chain(*processing.processor, *processing.detector, gate, events),
         capture(static_cast<std::size_t>(config.frameSamples) * kCaptureRingFrames),
         playout(static_cast<std::size_t>(config.frameSamples) * kPlayoutRingFrames),
         inbound(kInboundDatagrams),
         capturePipeline(capture),
         playoutPipeline(playout),
         callback(capturePipeline, playoutPipeline),
-        loop(*session, capture, playout, playoutPipeline, inbound, config),
+        loop(*session, capture, playout, playoutPipeline, inbound, chain, config),
         pump(*socket, inbound, clock) {}
 
   const CoreConfig config;
   std::unique_ptr<IDatagramSocket> socket;
   std::unique_ptr<PeerSession> session;
+  VoiceProcessing processing;
+  VoiceGate gate;
+  CaptureChain chain;
   SpscRingBuffer<int16_t> capture;
   SpscRingBuffer<int16_t> playout;
   SpscRingBuffer<InboundDatagram> inbound;
@@ -105,8 +114,14 @@ Status VoiceEngine::startLocked(const CoreConfig& config) {
   if (!session) {
     return session.status();
   }
+  Expected<VoiceProcessing> processing = dependencies_.processing.create(config);
+  if (!processing) {
+    return processing.status();
+  }
   auto running = std::make_unique<Running>(config, std::move(socket).value(),
-                                           std::move(session).value(), dependencies_.clock);
+                                           std::move(session).value(),
+                                           std::move(processing).value(), events_,
+                                           dependencies_.clock);
   AudioDeviceParams deviceParams;
   deviceParams.sampleRateHz = config.sampleRateHz;
   deviceParams.periodFrames = config.msToSamples(config.devicePeriodMs);
@@ -118,7 +133,11 @@ Status VoiceEngine::startLocked(const CoreConfig& config) {
   if (deviceStatus != Status::kOk) {
     return deviceStatus;
   }
+  // Every session starts from its configuration; the controls change it afterwards.
   muted_.store(false, std::memory_order_relaxed);
+  pushToTalk_.store(false, std::memory_order_relaxed);
+  talkMode_.store(config.talkMode, std::memory_order_relaxed);
+  vadSensitivity_.store(config.vadSensitivity, std::memory_order_relaxed);
   {
     const std::lock_guard<std::mutex> statsLock(statsMutex_);
     stats_ = EngineStats{};
@@ -164,7 +183,10 @@ bool VoiceEngine::readStats(EngineStats* out) const {
 void VoiceEngine::mediaThread(Running& running) {
   const auto period = std::chrono::milliseconds(running.config.mediaLoopPeriodMs);
   while (!running.stopRequested.load(std::memory_order_acquire)) {
-    running.session->setMuted(muted_.load(std::memory_order_relaxed));
+    running.gate.setMuted(muted_.load(std::memory_order_relaxed));
+    running.gate.setMode(talkMode_.load(std::memory_order_relaxed));
+    running.gate.setPushToTalk(pushToTalk_.load(std::memory_order_relaxed));
+    running.processing.detector->setSensitivity(vadSensitivity_.load(std::memory_order_relaxed));
     running.session->setOutputGain(outputGain_.load(std::memory_order_relaxed));
     running.loop.runOnce(dependencies_.clock.nowUs());
     publishStats(running);
@@ -188,6 +210,8 @@ void VoiceEngine::publishStats(const Running& running) {
   stats.playoutUnderruns = running.playoutPipeline.underruns();
   stats.captureOverruns = running.capturePipeline.overruns();
   stats.inboundDropped = running.pump.dropped();
+  stats.playoutQueueMs = static_cast<int>(running.playout.size() * CoreConfig::kMsPerSecond /
+                                          static_cast<std::size_t>(running.config.sampleRateHz));
   const std::lock_guard<std::mutex> lock(statsMutex_);
   stats_ = stats;
 }

@@ -225,6 +225,31 @@ enum class AudioRouteMessage(val raw: Int) {
   }
 }
 
+/** How the microphone opens: voice detector or push to talk. */
+enum class TalkModeMessage(val raw: Int) {
+  VOICE(0),
+  PUSH_TO_TALK(1);
+
+  companion object {
+    fun ofRaw(raw: Int): TalkModeMessage? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
+/** How easily the voice detector opens the microphone. */
+enum class VadSensitivityMessage(val raw: Int) {
+  LOW(0),
+  MEDIUM(1),
+  HIGH(2);
+
+  companion object {
+    fun ofRaw(raw: Int): VadSensitivityMessage? {
+      return values().firstOrNull { it.raw == raw }
+    }
+  }
+}
+
 /** Wi-Fi state as seen by the platform layer. */
 enum class WifiStateMessage(val raw: Int) {
   UNKNOWN(0),
@@ -248,7 +273,14 @@ data class RoomConfigMessage (
   val audioPort: Long,
   val bitrateBps: Long,
   /** Host only: return every audio packet to its sender (round-trip test). */
-  val echoMode: Boolean
+  val echoMode: Boolean,
+  /**
+   * How the microphone opens when the room starts (Dart changes it later
+   * through FFI).
+   */
+  val talkMode: TalkModeMessage,
+  /** The voice detector's sensitivity when the room starts. */
+  val vadSensitivity: VadSensitivityMessage
 )
  {
   companion object {
@@ -260,7 +292,9 @@ data class RoomConfigMessage (
       val audioPort = pigeonVar_list[4] as Long
       val bitrateBps = pigeonVar_list[5] as Long
       val echoMode = pigeonVar_list[6] as Boolean
-      return RoomConfigMessage(role, hostIp, displayName, controlPort, audioPort, bitrateBps, echoMode)
+      val talkMode = pigeonVar_list[7] as TalkModeMessage
+      val vadSensitivity = pigeonVar_list[8] as VadSensitivityMessage
+      return RoomConfigMessage(role, hostIp, displayName, controlPort, audioPort, bitrateBps, echoMode, talkMode, vadSensitivity)
     }
   }
   fun toList(): List<Any?> {
@@ -272,6 +306,8 @@ data class RoomConfigMessage (
       audioPort,
       bitrateBps,
       echoMode,
+      talkMode,
+      vadSensitivity,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -282,7 +318,7 @@ data class RoomConfigMessage (
       return true
     }
     val other = other as RoomConfigMessage
-    return VoicePlatformApiPigeonUtils.deepEquals(this.role, other.role) && VoicePlatformApiPigeonUtils.deepEquals(this.hostIp, other.hostIp) && VoicePlatformApiPigeonUtils.deepEquals(this.displayName, other.displayName) && VoicePlatformApiPigeonUtils.deepEquals(this.controlPort, other.controlPort) && VoicePlatformApiPigeonUtils.deepEquals(this.audioPort, other.audioPort) && VoicePlatformApiPigeonUtils.deepEquals(this.bitrateBps, other.bitrateBps) && VoicePlatformApiPigeonUtils.deepEquals(this.echoMode, other.echoMode)
+    return VoicePlatformApiPigeonUtils.deepEquals(this.role, other.role) && VoicePlatformApiPigeonUtils.deepEquals(this.hostIp, other.hostIp) && VoicePlatformApiPigeonUtils.deepEquals(this.displayName, other.displayName) && VoicePlatformApiPigeonUtils.deepEquals(this.controlPort, other.controlPort) && VoicePlatformApiPigeonUtils.deepEquals(this.audioPort, other.audioPort) && VoicePlatformApiPigeonUtils.deepEquals(this.bitrateBps, other.bitrateBps) && VoicePlatformApiPigeonUtils.deepEquals(this.echoMode, other.echoMode) && VoicePlatformApiPigeonUtils.deepEquals(this.talkMode, other.talkMode) && VoicePlatformApiPigeonUtils.deepEquals(this.vadSensitivity, other.vadSensitivity)
   }
 
   override fun hashCode(): Int {
@@ -294,10 +330,12 @@ data class RoomConfigMessage (
     result = 31 * result + VoicePlatformApiPigeonUtils.deepHash(this.audioPort)
     result = 31 * result + VoicePlatformApiPigeonUtils.deepHash(this.bitrateBps)
     result = 31 * result + VoicePlatformApiPigeonUtils.deepHash(this.echoMode)
+    result = 31 * result + VoicePlatformApiPigeonUtils.deepHash(this.talkMode)
+    result = 31 * result + VoicePlatformApiPigeonUtils.deepHash(this.vadSensitivity)
     return result
   }
   override fun toString(): String {
-    return "RoomConfigMessage(role=$role, hostIp=$hostIp, displayName=$displayName, controlPort=$controlPort, audioPort=$audioPort, bitrateBps=$bitrateBps, echoMode=$echoMode)"
+    return "RoomConfigMessage(role=$role, hostIp=$hostIp, displayName=$displayName, controlPort=$controlPort, audioPort=$audioPort, bitrateBps=$bitrateBps, echoMode=$echoMode, talkMode=$talkMode, vadSensitivity=$vadSensitivity)"
   }
 }
 
@@ -455,7 +493,12 @@ data class ActiveRoomMessage (
 data class PlatformStateMessage (
   val serviceRunning: Boolean,
   val audioRoute: AudioRouteMessage,
-  val wifiState: WifiStateMessage
+  val wifiState: WifiStateMessage,
+  /**
+   * The room is registered as a call with the system (Telecom), so headsets
+   * see a real call; false when it is only routed.
+   */
+  val systemCall: Boolean
 )
  {
   companion object {
@@ -463,7 +506,8 @@ data class PlatformStateMessage (
       val serviceRunning = pigeonVar_list[0] as Boolean
       val audioRoute = pigeonVar_list[1] as AudioRouteMessage
       val wifiState = pigeonVar_list[2] as WifiStateMessage
-      return PlatformStateMessage(serviceRunning, audioRoute, wifiState)
+      val systemCall = pigeonVar_list[3] as Boolean
+      return PlatformStateMessage(serviceRunning, audioRoute, wifiState, systemCall)
     }
   }
   fun toList(): List<Any?> {
@@ -471,6 +515,7 @@ data class PlatformStateMessage (
       serviceRunning,
       audioRoute,
       wifiState,
+      systemCall,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -481,7 +526,7 @@ data class PlatformStateMessage (
       return true
     }
     val other = other as PlatformStateMessage
-    return VoicePlatformApiPigeonUtils.deepEquals(this.serviceRunning, other.serviceRunning) && VoicePlatformApiPigeonUtils.deepEquals(this.audioRoute, other.audioRoute) && VoicePlatformApiPigeonUtils.deepEquals(this.wifiState, other.wifiState)
+    return VoicePlatformApiPigeonUtils.deepEquals(this.serviceRunning, other.serviceRunning) && VoicePlatformApiPigeonUtils.deepEquals(this.audioRoute, other.audioRoute) && VoicePlatformApiPigeonUtils.deepEquals(this.wifiState, other.wifiState) && VoicePlatformApiPigeonUtils.deepEquals(this.systemCall, other.systemCall)
   }
 
   override fun hashCode(): Int {
@@ -489,10 +534,11 @@ data class PlatformStateMessage (
     result = 31 * result + VoicePlatformApiPigeonUtils.deepHash(this.serviceRunning)
     result = 31 * result + VoicePlatformApiPigeonUtils.deepHash(this.audioRoute)
     result = 31 * result + VoicePlatformApiPigeonUtils.deepHash(this.wifiState)
+    result = 31 * result + VoicePlatformApiPigeonUtils.deepHash(this.systemCall)
     return result
   }
   override fun toString(): String {
-    return "PlatformStateMessage(serviceRunning=$serviceRunning, audioRoute=$audioRoute, wifiState=$wifiState)"
+    return "PlatformStateMessage(serviceRunning=$serviceRunning, audioRoute=$audioRoute, wifiState=$wifiState, systemCall=$systemCall)"
   }
 }
 private open class VoicePlatformApiPigeonCodec : StandardMessageCodec() {
@@ -510,30 +556,40 @@ private open class VoicePlatformApiPigeonCodec : StandardMessageCodec() {
       }
       131.toByte() -> {
         (readValue(buffer) as Long?)?.let {
-          WifiStateMessage.ofRaw(it.toInt())
+          TalkModeMessage.ofRaw(it.toInt())
         }
       }
       132.toByte() -> {
-        (readValue(buffer) as? List<Any?>)?.let {
-          RoomConfigMessage.fromList(it)
+        (readValue(buffer) as Long?)?.let {
+          VadSensitivityMessage.ofRaw(it.toInt())
         }
       }
       133.toByte() -> {
-        (readValue(buffer) as? List<Any?>)?.let {
-          PlatformCapabilitiesMessage.fromList(it)
+        (readValue(buffer) as Long?)?.let {
+          WifiStateMessage.ofRaw(it.toInt())
         }
       }
       134.toByte() -> {
         (readValue(buffer) as? List<Any?>)?.let {
-          PlatformInfoMessage.fromList(it)
+          RoomConfigMessage.fromList(it)
         }
       }
       135.toByte() -> {
         (readValue(buffer) as? List<Any?>)?.let {
-          ActiveRoomMessage.fromList(it)
+          PlatformCapabilitiesMessage.fromList(it)
         }
       }
       136.toByte() -> {
+        (readValue(buffer) as? List<Any?>)?.let {
+          PlatformInfoMessage.fromList(it)
+        }
+      }
+      137.toByte() -> {
+        (readValue(buffer) as? List<Any?>)?.let {
+          ActiveRoomMessage.fromList(it)
+        }
+      }
+      138.toByte() -> {
         (readValue(buffer) as? List<Any?>)?.let {
           PlatformStateMessage.fromList(it)
         }
@@ -551,28 +607,36 @@ private open class VoicePlatformApiPigeonCodec : StandardMessageCodec() {
         stream.write(130)
         writeValue(stream, value.raw.toLong())
       }
-      is WifiStateMessage -> {
+      is TalkModeMessage -> {
         stream.write(131)
         writeValue(stream, value.raw.toLong())
       }
-      is RoomConfigMessage -> {
+      is VadSensitivityMessage -> {
         stream.write(132)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is PlatformCapabilitiesMessage -> {
+      is WifiStateMessage -> {
         stream.write(133)
-        writeValue(stream, value.toList())
+        writeValue(stream, value.raw.toLong())
       }
-      is PlatformInfoMessage -> {
+      is RoomConfigMessage -> {
         stream.write(134)
         writeValue(stream, value.toList())
       }
-      is ActiveRoomMessage -> {
+      is PlatformCapabilitiesMessage -> {
         stream.write(135)
         writeValue(stream, value.toList())
       }
-      is PlatformStateMessage -> {
+      is PlatformInfoMessage -> {
         stream.write(136)
+        writeValue(stream, value.toList())
+      }
+      is ActiveRoomMessage -> {
+        stream.write(137)
+        writeValue(stream, value.toList())
+      }
+      is PlatformStateMessage -> {
+        stream.write(138)
         writeValue(stream, value.toList())
       }
       else -> super.writeValue(stream, value)

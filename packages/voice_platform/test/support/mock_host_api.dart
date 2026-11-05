@@ -15,6 +15,8 @@ void registerHostApiFallbacks() {
       audioPort: 1,
       bitrateBps: 1,
       echoMode: false,
+      talkMode: TalkModeMessage.voice,
+      vadSensitivity: VadSensitivityMessage.medium,
     ),
   );
 }
@@ -56,4 +58,5 @@ PlatformStateMessage platformStateMessageFor(PlatformState state) =>
       serviceRunning: state.serviceRunning,
       audioRoute: AudioRouteMessage.values.byName(state.audioRoute.name),
       wifiState: WifiStateMessage.values.byName(state.wifiState.name),
+      systemCall: state.systemCall,
     );

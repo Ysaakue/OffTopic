@@ -11,6 +11,8 @@ export 'src/models/platform_info.dart';
 export 'src/models/platform_state.dart';
 export 'src/models/room_config.dart';
 export 'src/models/room_role.dart';
+export 'src/models/talk_mode.dart';
+export 'src/models/vad_sensitivity.dart';
 export 'src/models/wifi_state.dart';
 export 'src/pigeon_voice_platform_gateway.dart' show PigeonVoicePlatformGateway;
 export 'src/voice_platform_exception.dart';

@@ -14,6 +14,7 @@
 
 #include "fakes/fake_audio_device.h"
 #include "fakes/fake_network.h"
+#include "fakes/fake_voice_processing.h"
 
 namespace voice_core {
 namespace {
@@ -21,6 +22,7 @@ namespace {
 using testing::FakeAudioDeviceFactory;
 using testing::FakeNetwork;
 using testing::FakeSocketFactory;
+using testing::FakeVoiceProcessingFactory;
 
 constexpr uint32_t kLoopback = 0x7F000001;
 
@@ -71,7 +73,8 @@ class VoiceEngineTest : public ::testing::Test {
   FakeSocketFactory sockets_{network_};
   FakeAudioDeviceFactory audio_;
   SteadyClock clock_;
-  VoiceEngine engine_{EngineDependencies{audio_, sockets_, clock_}};
+  FakeVoiceProcessingFactory processing_;
+  VoiceEngine engine_{EngineDependencies{audio_, sockets_, clock_, processing_}};
 };
 
 TEST_F(VoiceEngineTest, RefusesToStartWithoutInit) {
@@ -184,6 +187,11 @@ TEST_F(VoiceEngineTest, PublishesStatisticsWhileRunning) {
     EngineStats stats;
     return engine_.readStats(&stats) && stats.session.jitterTargetMs == 40;
   }));
+  // The media loop keeps playoutBufferMs (20 ms) of decoded audio queued.
+  EXPECT_TRUE(eventually([this] {
+    EngineStats stats;
+    return engine_.readStats(&stats) && stats.playoutQueueMs >= 20;
+  }));
 }
 
 TEST_F(VoiceEngineTest, SendsCapturedAudioEndToEnd) {
@@ -231,9 +239,97 @@ TEST_F(VoiceEngineTest, PlaysSilenceWhenNothingArrives) {
   EXPECT_EQ(played.size(), 160U);
 }
 
+TEST_F(VoiceEngineTest, ReportsAVoiceProcessingFailure) {
+  processing_.failWith = Status::kInternal;
+  ASSERT_EQ(engine_.init(client()), Status::kOk);
+
+  EXPECT_EQ(engine_.start(), Status::kInternal);
+  EXPECT_FALSE(engine_.running());
+  EXPECT_EQ(audio_.created, 0);
+}
+
+TEST_F(VoiceEngineTest, BuildsTheVoiceProcessingFromTheConfiguration) {
+  CoreConfig config = client();
+  config.vadSensitivity = VadSensitivity::kHigh;
+  ASSERT_EQ(engine_.init(config), Status::kOk);
+  ASSERT_EQ(engine_.start(), Status::kOk);
+
+  EXPECT_EQ(processing_.lastConfig.vadSensitivity, VadSensitivity::kHigh);
+  EXPECT_TRUE(eventually([this] {
+    return processing_.lastDetector->sensitivity.load() == VadSensitivity::kHigh;
+  }));
+}
+
+TEST_F(VoiceEngineTest, ProcessesTheMicrophoneBeforeSendingIt) {
+  ASSERT_EQ(engine_.init(client()), Status::kOk);
+  ASSERT_EQ(engine_.start(), Status::kOk);
+
+  audio_.last->pump(sine(320));
+
+  EXPECT_TRUE(eventually([this] { return processing_.lastProcessor->captured.load() == 1; }));
+}
+
+TEST_F(VoiceEngineTest, SendsNothingWhileTheDetectorHearsNoVoice) {
+  processing_.voice = false;
+  ASSERT_EQ(engine_.init(client()), Status::kOk);
+  ASSERT_EQ(engine_.start(), Status::kOk);
+
+  for (int i = 0; i < 5; ++i) {
+    audio_.last->pump(sine(320));
+  }
+  ASSERT_TRUE(eventually([this] { return processing_.lastProcessor->captured.load() == 5; }));
+
+  EXPECT_EQ(audioSent(), 0U);
+}
+
+TEST_F(VoiceEngineTest, PushToTalkSendsOnlyWhileHeld) {
+  CoreConfig config = client();
+  config.talkMode = TalkMode::kPushToTalk;
+  ASSERT_EQ(engine_.init(config), Status::kOk);
+  ASSERT_EQ(engine_.start(), Status::kOk);
+  audio_.last->pump(sine(320));
+  ASSERT_TRUE(eventually([this] { return processing_.lastProcessor->captured.load() == 1; }));
+  EXPECT_EQ(audioSent(), 0U);
+
+  engine_.setPushToTalk(true);
+  ASSERT_TRUE(eventually([this] {
+    audio_.last->pump(sine(320));
+    return audioSent() > 0;
+  }));
+  EXPECT_EQ(processing_.lastDetector->calls.load(), 0);  // push to talk ignores the detector
+}
+
+TEST_F(VoiceEngineTest, SwitchesTheTalkModeWhileRunning) {
+  ASSERT_EQ(engine_.init(client()), Status::kOk);
+  ASSERT_EQ(engine_.start(), Status::kOk);
+
+  engine_.setTalkMode(TalkMode::kPushToTalk);
+  // Any frame decided before the switch has been sent by now.
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  const std::size_t before = audioSent();
+  for (int i = 1; i <= 5; ++i) {
+    audio_.last->pump(sine(320));
+    // One frame at a time: the capture ring holds only a few frames.
+    ASSERT_TRUE(eventually([this, i] { return processing_.lastProcessor->captured.load() == i; }));
+  }
+
+  EXPECT_EQ(audioSent(), before);
+}
+
+TEST_F(VoiceEngineTest, AppliesTheVadSensitivityWhileRunning) {
+  ASSERT_EQ(engine_.init(client()), Status::kOk);
+  ASSERT_EQ(engine_.start(), Status::kOk);
+
+  engine_.setVadSensitivity(VadSensitivity::kLow);
+
+  EXPECT_TRUE(eventually([this] {
+    return processing_.lastDetector->sensitivity.load() == VadSensitivity::kLow;
+  }));
+}
+
 TEST_F(VoiceEngineTest, StopsARunningEngineOnDestruction) {
   {
-    VoiceEngine engine(EngineDependencies{audio_, sockets_, clock_});
+    VoiceEngine engine(EngineDependencies{audio_, sockets_, clock_, processing_});
     ASSERT_EQ(engine.init(client()), Status::kOk);
     ASSERT_EQ(engine.start(), Status::kOk);
   }

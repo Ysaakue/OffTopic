@@ -178,8 +178,113 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get permissionDeniedBody =>
-      'O OffTopic precisa do microfone e, a partir do Android 17, do acesso a dispositivos na rede local para conversar pelo hotspot.';
+      'O OffTopic precisa do microfone, da conexão com o seu intercomunicador Bluetooth e, a partir do Android 17, do acesso a dispositivos na rede local para conversar pelo hotspot.';
 
   @override
   String get permissionOpenSettings => 'Abrir configurações';
+
+  @override
+  String get talkModeLabel => 'Modo de fala';
+
+  @override
+  String get talkModeVoice => 'Voz';
+
+  @override
+  String get talkModePushToTalk => 'Apertar para falar';
+
+  @override
+  String get vadSensitivityLabel => 'Detecção de voz';
+
+  @override
+  String get vadSensitivityLow => 'Baixa';
+
+  @override
+  String get vadSensitivityMedium => 'Média';
+
+  @override
+  String get vadSensitivityHigh => 'Alta';
+
+  @override
+  String get talkSettingsSaveFailed =>
+      'Não foi possível salvar esta configuração: ela vale só para esta sala.';
+
+  @override
+  String get pushToTalkHold => 'Segure para falar';
+
+  @override
+  String get pushToTalkTalking => 'Falando…';
+
+  @override
+  String audioRouteLabel(String route) {
+    return 'Áudio: $route';
+  }
+
+  @override
+  String get audioRouteIntercom => 'Intercomunicador (Bluetooth)';
+
+  @override
+  String get audioRouteHeadset => 'Fone de ouvido';
+
+  @override
+  String get audioRouteSpeaker => 'Alto-falante';
+
+  @override
+  String get audioRouteEarpiece => 'Alto-falante de ouvido';
+
+  @override
+  String get audioRouteUnknown => 'ainda sem rota';
+
+  @override
+  String get talkingOnAir => 'Seu microfone está no ar';
+
+  @override
+  String get talkingQuiet => 'Seu microfone está em silêncio';
+
+  @override
+  String get audioCallModeSystem =>
+      'Modo chamada do celular: o intercomunicador vê uma ligação';
+
+  @override
+  String get audioCallModeDirect =>
+      'Roteamento direto do áudio (o celular recusou o modo chamada)';
+
+  @override
+  String get audioTestErrorEndedBySystem =>
+      'O celular encerrou a sala: outra ligação ou o botão de desligar do fone.';
+
+  @override
+  String get reportCopy => 'Copiar relatório';
+
+  @override
+  String get reportCopied =>
+      'Relatório copiado: cole na conversa com os desenvolvedores.';
+
+  @override
+  String get hostAddressTitle =>
+      'Seu IP: os outros pilotos digitam este para entrar';
+
+  @override
+  String hostAddressEntry(String network, String address) {
+    return '$network: $address';
+  }
+
+  @override
+  String get hostAddressHotspot => 'Hotspot';
+
+  @override
+  String get hostAddressWifi => 'Wi-Fi';
+
+  @override
+  String get hostAddressOther => 'Outra rede';
+
+  @override
+  String get hostAddressNone =>
+      'Nenhuma rede local ainda: ligue o hotspot deste celular.';
+
+  @override
+  String get hostAddressUnavailable =>
+      'Não foi possível ler o IP deste celular.';
+
+  @override
+  String get hostAddressRefresh => 'Atualizar IP';
 }

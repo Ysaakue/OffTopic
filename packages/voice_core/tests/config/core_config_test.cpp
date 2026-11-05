@@ -46,6 +46,12 @@ TEST(CoreConfigTest, DefaultsMatchTheSpecification) {
   EXPECT_EQ(config.controlTimeoutMs, 5000);
   EXPECT_EQ(config.maxParticipants, 8);
   EXPECT_FALSE(config.echoMode);
+  EXPECT_EQ(config.noiseSuppression, NoiseSuppression::kHigh);
+  EXPECT_TRUE(config.automaticGain);
+  EXPECT_TRUE(config.highPassFilter);
+  EXPECT_FALSE(config.echoCancellation);
+  EXPECT_EQ(config.talkMode, TalkMode::kVoice);
+  EXPECT_EQ(config.vadSensitivity, VadSensitivity::kMedium);
 }
 
 TEST(CoreConfigTest, ConvertsMillisecondsToSamples) {
@@ -215,8 +221,16 @@ INSTANTIATE_TEST_SUITE_P(
                     ConfigError::kMaxParticipants},
         InvalidCase{"NegativeVadTail", [](CoreConfig& c) { c.vadTailMs = -1; },
                     ConfigError::kVadTail},
-        InvalidCase{"LongVadTail", [](CoreConfig& c) { c.vadTailMs = 2001; },
-                    ConfigError::kVadTail}),
+        InvalidCase{"LongVadTail", [](CoreConfig& c) { c.vadTailMs = 2020; },
+                    ConfigError::kVadTail},
+        InvalidCase{"UnknownNoiseSuppression",
+                    [](CoreConfig& c) { c.noiseSuppression = static_cast<NoiseSuppression>(5); },
+                    ConfigError::kNoiseSuppression},
+        InvalidCase{"UnknownTalkMode", [](CoreConfig& c) { c.talkMode = static_cast<TalkMode>(2); },
+                    ConfigError::kTalkMode},
+        InvalidCase{"UnknownVadSensitivity",
+                    [](CoreConfig& c) { c.vadSensitivity = static_cast<VadSensitivity>(3); },
+                    ConfigError::kVadSensitivity}),
     [](const ::testing::TestParamInfo<InvalidCase>& paramInfo) {
       return std::string(paramInfo.param.name);
     });

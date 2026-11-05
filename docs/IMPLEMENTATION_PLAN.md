@@ -327,7 +327,7 @@ Não haverá golden tests de pixel: a renderização de fontes muda entre Window
 | `LegacyScoRouter` | 2 | Transições do broadcast de SCO (connecting → connected → disconnected), nova tentativa em caso de erro, stop |
 | `AudioFocusController` | 4 | Ganho. Perda transitória e perda definitiva pausam. Ganho depois da ligação retoma e refaz a rota. Abandono do foco no stop |
 | `WifiBinder` | 4 | `NetworkRequest` com `TRANSPORT_WIFI` e sem `INTERNET`. Rede disponível envia o handle, rede perdida limpa, rede nova envia o handle novo. Os locks são sempre liberados, inclusive depois de um erro |
-| `GatewayResolver`, `HostAddressResolver`, `HotspotStateMonitor` | 3 | Tabelas: rota padrão presente e ausente, só IPv6, nomes de interface (`ap0`, `swlan0`, `wlan1`) |
+| `GatewayResolver`, `HotspotStateMonitor` | 3 | Tabelas: rota padrão presente e ausente, só IPv6, nomes de interface (`ap0`, `swlan0`, `wlan1`). O IP do anfitrião ficou com o `LocalAddressClassifier` (Dart, fase 2) |
 | `RoomController` | 1–4 | Ordem do início: foco, rota, Wi-Fi, núcleo. Se o núcleo falhar, desfaz tudo (libera locks e rota). Stop idempotente. Mute atualiza a notificação e o núcleo. Pause e resume |
 | `VoicePlatformApiImpl` | 0–4 | Conversão das mensagens Pigeon. Erros viram `FlutterError` com código. Emissões do stream, verificadas com Turbine |
 | `BatteryOptimizationHelper` | 4 | Já isento: nenhum intent. Senão, intent correto com o pacote. Fabricante leva ao guia certo (Xiaomi/Redmi/POCO, Samsung, Motorola, outros) |
@@ -428,6 +428,36 @@ Cada fase termina com o aceite da spec cumprido em aparelho real e um resumo de 
 5. **Testar cedo com os intercomunicadores reais do grupo.** Considerar o HFP em 8 kHz (CVSD); nesse caso o miniaudio reamostra.
 - **Testes:** todos os itens da fase 2 do catálogo: contrato `IAudioProcessor`, `VoiceGate`, DTX/keepalive, `AudioRouterFactory` e os dois routers, `SettingsRepositoryImpl`. Também o simulador com DTX. `verify.ps1` verde.
 - **Aceite:** conversa pelos intercomunicadores reais, vento atenuado (teste com ventilador) e latência de até 250 ms.
+- **Desvios registrados na implementação (02/11/2026):**
+  - **Spike concluído: viável.** O `cmake/webrtc_apm.cmake` reproduz as listas de fontes dos `meson.build` da v2.1 e compila no WSL e no NDK r30 (arm64-v8a, armeabi-v7a e x86_64). Ajustes:
+    - Abseil **20250127.2**, e não 20260817.0. A partir da 20250512, `absl::Nullable` e `absl::Nonnull` viraram macros e a v2.1 não compila. É a LTS mais nova que funciona, como o plano previa.
+    - `-include cstdint` nos arquivos C++ do APM: `rtc_base/trace_event.h` usa `uint8_t` sem incluir o cabeçalho, e a libstdc++ nova não o traz mais junto. Assim o submódulo fica intocado.
+    - No armeabi-v7a o APM usa C portável, sem NEON nem assembly ARM. O arm64 usa NEON, e o x86_64 usa SSE2 e AVX2 com detecção em tempo de execução.
+    - O APM compila sempre com `NDEBUG` e `-O2`, até no preset debug, como no upstream.
+    - Os testes do Opus e do Abseil ficam fora (`BUILD_TESTING OFF`): o `include(CTest)` do Abseil ligava os do Opus.
+  - **VAD:** a v2.1 não tem mais o `voice_detection` dentro do APM, que saiu do WebRTC novo. O `WebRtcVoiceDetector` usa o VAD GMM do `common_audio` (`WebRtcVad`) em blocos de 10 ms. As três sensibilidades (baixa, média, alta) correspondem aos modos 3, 2 e 1.
+  - **AEC por software desligado por padrão** (`echoCancellation = false` na `CoreConfig`): o caminho normal de chamada do Android já cancela o eco. O AEC3 está implementado e testado, pronto para ser ligado.
+  - **A cauda do VAD é arredondada para cima em quadros inteiros:** 300 ms com quadros de 40 ms dá 8 quadros. Ela não exige mais múltiplos exatos.
+  - **O mute saiu da `PeerSession` e entrou no `VoiceGate`**, que decide o que é enviado: mute, PTT ou voz. A sessão recebe a decisão (`transmit`).
+  - **Evento novo `VC_EVENT_TALKING_CHANGED`** (`{"talking":true|false}`): é o indicador "seu microfone está no ar". O "quem está falando" por participante continua na fase 3.
+  - **`PortNumber`, `Bitrate` e a tela de configurações completa vão para a fase 3**, junto com a tela "Criar sala". A fase 2 guarda só o modo de fala e a sensibilidade (`SettingsRepository` sobre `shared_preferences`), e eles aparecem na tela de teste de áudio.
+  - **Sem `BLUETOOTH_CONNECT` a sala não inicia**, como acontece com as outras permissões. O pedido é feito junto com o de rede local (grupo `NEARBY_DEVICES`).
+  - **A rota de áudio acompanha os dispositivos** (`AudioDeviceCallback`): quando o intercomunicador conecta ou cai durante a sala, a rota é refeita e o stream de estado avisa o Dart. Antes de parar a sala, o plugin desliga esse callback.
+  - **A sala virou uma chamada do sistema (04/11/2026, achado do teste com intercomunicadores):** com o roteamento direto da spec (`setCommunicationDevice`/`startBluetoothSco`), o supressor de ruído do próprio intercomunicador não entrava; numa ligação comum ou do WhatsApp, entra.
+    - A sala agora é registrada como chamada autogerenciada pelo Jetpack Core-Telecom 1.1.0 (`TelecomCallAudio`). O fone vê uma chamada de verdade, e o sistema cuida do modo de áudio e da rota, que é pedida com `requestEndpointChange` (Bluetooth, depois fone com fio, depois alto-falante).
+    - Se o sistema recusar a chamada, o `FallbackCallAudio` usa os roteadores diretos da fase 1.
+    - Quando o sistema encerra a chamada (botão de desligar do fone, outra ligação), a sala para e o Dart mostra o motivo. Uma espera (hold) emudece o microfone até a chamada voltar.
+    - O estado da plataforma ganhou `systemCall`, e a tela diz em qual modo a sala está.
+    - Ainda sem serviço em primeiro plano nem notificação `CallStyle`: os dois entram na fase 4, agora com o tipo `phoneCall` em vez de `microphone|connectedDevice`.
+  - **Botão "Copiar relatório"**, pedido no teste: duração, rotas, modo de chamada, quedas do link, atraso estimado (quadro + metade do RTT + jitter buffer + fila de reprodução; sem o hardware de áudio dos celulares), RTT, jitter, perda e totais. O núcleo passou a informar `playout_queue_ms`. O relatório é um registro de diagnóstico com chaves em inglês; só o botão e a confirmação estão nos ARB.
+  - **A sensibilidade do VAD mudou pouco no teste.** Com o supressor do intercomunicador ativo, a diferença entre os níveis deve aparecer mais; reavaliar no próximo teste.
+  - **IP do anfitrião na tela, antecipado da fase 3** a pedido do teste (04/11):
+    - Feito em Dart puro (`NetworkInterface.list`, atrás de `LocalInterfaceLister`), sem Kotlin nem Pigeon. Funciona igual no iOS.
+    - O `LocalAddressClassifier` aceita só IPv4 privado (RFC 1918) e descarta dados móveis, VPN e Wi-Fi Direct (`rmnet`, `ccmni`, `clat`, `v4-`, `tun`, `p2p`…).
+    - Classifica por nome de interface: hotspot (`ap0`, `swlan0`, `softap0`, `ap_br_*`, `wlan1+`), Wi-Fi (`wlan0`) ou outra rede. O hotspot vem primeiro.
+    - A lista é relida ao voltar ao app (o hotspot costuma ser ligado nas configurações do sistema) e pelo botão "Atualizar IP".
+    - Isso substitui o `HostAddressResolver` em Kotlin previsto na fase 3.
+  - **Aceite da fase 2:** liberado pelo usuário em 05/11/2026, com o APK 0.2.2. Continuam abertos para os testes de estrada da fase 3: o supressor do intercomunicador no modo chamada, o teste com ventilador e o botão de desligar do fone.
 
 ### Fase 3: Anfitrião e grupo
 1. C++:
@@ -437,7 +467,7 @@ Cada fase termina com o aceite da spec cumprido em aparelho real e um resumo de 
    - Eventos: entrou, saiu, falando, roster, conexão perdida e restabelecida.
 2. Kotlin:
    - `GatewayResolver`: gateway da rede Wi-Fi por `LinkProperties`.
-   - IP do próprio anfitrião, pela interface do hotspot.
+   - ~~IP do próprio anfitrião, pela interface do hotspot.~~ Feito na fase 2, em Dart (`LocalAddressClassifier`).
    - `HotspotStateMonitor`: o Android não tem API pública para isso, então é melhor esforço com confirmação manual no checklist.
    - `openHotspotSettings`, com intent de tethering e fallback.
 3. Dart:

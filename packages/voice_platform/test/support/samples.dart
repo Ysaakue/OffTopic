@@ -56,6 +56,8 @@ RoomConfigMessage sampleClientConfigMessage() => RoomConfigMessage(
   audioPort: 47801,
   bitrateBps: 24000,
   echoMode: false,
+  talkMode: TalkModeMessage.voice,
+  vadSensitivity: VadSensitivityMessage.medium,
 );
 
 const sampleEchoHostConfig = RoomConfig(
@@ -65,4 +67,15 @@ const sampleEchoHostConfig = RoomConfig(
   audioPort: 47801,
   bitrateBps: 24000,
   echoMode: true,
+);
+
+const samplePushToTalkConfig = RoomConfig(
+  role: RoomRole.client,
+  hostIp: '10.0.0.1',
+  displayName: 'Caio',
+  controlPort: 47800,
+  audioPort: 47801,
+  bitrateBps: 24000,
+  talkMode: TalkMode.pushToTalk,
+  vadSensitivity: VadSensitivity.high,
 );

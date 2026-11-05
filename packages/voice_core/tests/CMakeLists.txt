@@ -10,6 +10,12 @@ add_executable(voice_core_tests
   common/clock_test.cpp
   common/expected_test.cpp
   config/core_config_test.cpp
+  dsp/audio_processor_contract_test.cpp
+  dsp/voice_gate_test.cpp
+  dsp/voice_processing_factory_test.cpp
+  dsp/webrtc_audio_processor_test.cpp
+  dsp/webrtc_voice_detector_test.cpp
+  engine/capture_chain_test.cpp
   engine/media_loop_test.cpp
   engine/network_pump_test.cpp
   engine/voice_engine_test.cpp

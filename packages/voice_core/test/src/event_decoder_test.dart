@@ -5,6 +5,7 @@ void main() {
   const decoder = EventDecoder();
   const stateChanged = 1;
   const linkChanged = 2;
+  const talkingChanged = 3;
 
   group('EventDecoder', () {
     test('decodes every state', () {
@@ -26,6 +27,21 @@ void main() {
       expect(
         decoder.decode(linkChanged, '{"up":true,"peer":"192.168.43.1:47801"}'),
         const CoreLinkChanged(up: true, peer: '192.168.43.1:47801'),
+      );
+    });
+
+    test('decodes talking changes', () {
+      expect(
+        decoder.decode(talkingChanged, '{"talking":true}'),
+        const CoreTalkingChanged(talking: true),
+      );
+      expect(
+        decoder.decode(talkingChanged, '{"talking":false}'),
+        const CoreTalkingChanged(talking: false),
+      );
+      expect(
+        () => decoder.decode(talkingChanged, '{"talking":1}'),
+        throwsA(isA<VoiceCoreException>()),
       );
     });
 

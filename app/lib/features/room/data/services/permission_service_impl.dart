@@ -7,12 +7,17 @@ import 'package:voice_platform/voice_platform.dart';
 /// - Every platform: the microphone.
 /// - Android 17+ (targetSdk 37): ACCESS_LOCAL_NETWORK, or the system blocks
 ///   every packet on the hotspot (docs/SPEC.md, addendum).
-/// - Phase 2 adds BLUETOOTH_CONNECT (API 31+), same NEARBY_DEVICES group.
+/// - Android 12+ (API 31): BLUETOOTH_CONNECT, to route the room to the
+///   intercom. It shares the NEARBY_DEVICES group with ACCESS_LOCAL_NETWORK,
+///   so Android 17 asks once for both.
 final class PermissionServiceImpl implements PermissionService {
   const new({required this._requester, required this._platformInfo});
 
   /// First Android API level that needs ACCESS_LOCAL_NETWORK.
   static const localNetworkApiLevel = 37;
+
+  /// First Android API level that needs BLUETOOTH_CONNECT.
+  static const bluetoothConnectApiLevel = 31;
 
   static const _android = 'android';
 
@@ -42,13 +47,18 @@ final class PermissionServiceImpl implements PermissionService {
   }
 
   /// The permissions a room needs on [platform] (null when unknown).
-  static List<AppPermission> requiredPermissions(PlatformInfo? platform) => [
-    AppPermission.microphone,
-    if (platform != null &&
-        platform.osName == _android &&
-        platform.apiLevel >= localNetworkApiLevel)
-      AppPermission.localNetwork,
-  ];
+  static List<AppPermission> requiredPermissions(PlatformInfo? platform) {
+    final androidApi = platform != null && platform.osName == _android
+        ? platform.apiLevel
+        : null;
+    return [
+      AppPermission.microphone,
+      if (androidApi != null && androidApi >= bluetoothConnectApiLevel)
+        AppPermission.bluetoothConnect,
+      if (androidApi != null && androidApi >= localNetworkApiLevel)
+        AppPermission.localNetwork,
+    ];
+  }
 
   Future<PlatformInfo?> _readPlatformInfo() async {
     try {

@@ -11,4 +11,10 @@ abstract final class AppDimensions {
 
   /// Gap between sections.
   static const double spacingLarge = 32;
+
+  /// Height of the push-to-talk area: easy to find and hold with gloves.
+  static const double pushToTalkHeight = 160;
+
+  /// Corner radius of large touch areas.
+  static const double largeRadius = 24;
 }

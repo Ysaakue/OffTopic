@@ -17,6 +17,9 @@ final class SessionStats extends Equatable {
     required this.concealedFrames,
     required this.playoutUnderruns,
     this.rttMs,
+    this.captureOverruns = 0,
+    this.playoutQueueMs = 0,
+    this.estimatedDelayMs,
   });
 
   /// Peers with a live link.
@@ -50,6 +53,18 @@ final class SessionStats extends Equatable {
   /// Times the speaker ran out of audio.
   final int playoutUnderruns;
 
+  /// Times captured audio was dropped.
+  final int captureOverruns;
+
+  /// Decoded audio waiting for the speaker.
+  final int playoutQueueMs;
+
+  /// What this phone can measure of the delay of the voice it plays: the
+  /// other phone's frame, half the round trip, the jitter buffer and the
+  /// playout queue. The phones' audio hardware adds to it. Null until the
+  /// round trip is known.
+  final int? estimatedDelayMs;
+
   /// Whether the other phone is reachable.
   bool get linkUp => participants > 0;
 
@@ -69,5 +84,8 @@ final class SessionStats extends Equatable {
     fecRecovered,
     concealedFrames,
     playoutUnderruns,
+    captureOverruns,
+    playoutQueueMs,
+    estimatedDelayMs,
   ];
 }

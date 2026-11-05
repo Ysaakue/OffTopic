@@ -19,11 +19,30 @@ internal class FakeAudioManagerFacade : AudioManagerFacade {
     var routeChanges: List<Int?> = emptyList()
     var currentRouteType: Int? = null
     var cleared = 0
-    private val listeners = mutableListOf<(Int?) -> Unit>()
+    private val routeListeners = mutableListOf<(Int?) -> Unit>()
     val openListeners: Int
-        get() = listeners.size
+        get() = routeListeners.size + scoListeners.size + deviceListeners.size
+
+    // Legacy SCO (API 29-30).
+    override var isBluetoothScoOn: Boolean = false
+
+    /** SCO states announced to the listeners while startBluetoothSco runs. */
+    var scoStates: List<Int> = emptyList()
+    var scoStarts = 0
+    var scoStops = 0
+    private val scoListeners = mutableListOf<(Int) -> Unit>()
+
+    private val deviceListeners = mutableListOf<() -> Unit>()
+
+    /** Simulates a device being plugged in or removed. */
+    fun changeDevices() = deviceListeners.toList().forEach { it() }
 
     override fun outputDevices(): List<AudioOutput> = outputs
+
+    override fun onDevicesChanged(listener: () -> Unit): AutoCloseable {
+        deviceListeners += listener
+        return AutoCloseable { deviceListeners -= listener }
+    }
 
     override fun availableCommunicationDevices(): List<AudioOutput> = communicationDevices
 
@@ -35,7 +54,7 @@ internal class FakeAudioManagerFacade : AudioManagerFacade {
         if (appliesRouteAtOnce) {
             currentRouteType = device.type
         }
-        routeChanges.forEach { type -> listeners.toList().forEach { it(type) } }
+        routeChanges.forEach { type -> routeListeners.toList().forEach { it(type) } }
         return true
     }
 
@@ -48,7 +67,21 @@ internal class FakeAudioManagerFacade : AudioManagerFacade {
     override fun communicationDeviceType(): Int? = currentRouteType
 
     override fun onCommunicationDeviceChanged(listener: (Int?) -> Unit): AutoCloseable {
-        listeners += listener
-        return AutoCloseable { listeners -= listener }
+        routeListeners += listener
+        return AutoCloseable { routeListeners -= listener }
+    }
+
+    override fun startBluetoothSco() {
+        scoStarts++
+        scoStates.forEach { state -> scoListeners.toList().forEach { it(state) } }
+    }
+
+    override fun stopBluetoothSco() {
+        scoStops++
+    }
+
+    override fun onScoAudioStateChanged(listener: (Int) -> Unit): AutoCloseable {
+        scoListeners += listener
+        return AutoCloseable { scoListeners -= listener }
     }
 }

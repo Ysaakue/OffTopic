@@ -52,6 +52,17 @@ final class NativeCoreDouble {
     when(() => bindings.vc_set_output_gain(any())).thenAnswer((invocation) {
       outputGain = invocation.positionalArguments.single as double;
     });
+    when(() => bindings.vc_set_talk_mode(any())).thenAnswer((invocation) {
+      talkMode = invocation.positionalArguments.single as int;
+      return controlResult.value;
+    });
+    when(() => bindings.vc_set_push_to_talk(any())).thenAnswer((invocation) {
+      pushToTalk = invocation.positionalArguments.single as int;
+    });
+    when(() => bindings.vc_set_vad_sensitivity(any())).thenAnswer((invocation) {
+      vadSensitivity = invocation.positionalArguments.single as int;
+      return controlResult.value;
+    });
   }
 
   final MockVoiceCoreBindings bindings;
@@ -59,6 +70,12 @@ final class NativeCoreDouble {
   final List<int> sentPayloads = [];
   final List<int> freedPayloads = [];
   double? outputGain;
+  int? talkMode;
+  int? pushToTalk;
+  int? vadSensitivity;
+
+  /// What vc_set_talk_mode and vc_set_vad_sensitivity return.
+  vc_result controlResult = vc_result.VC_OK;
 
   bool get callbackRegistered => callback != nullptr;
 
@@ -96,7 +113,8 @@ final class NativeCoreDouble {
           ..fec_recovered = stats.fecRecovered
           ..concealed_frames = stats.concealedFrames
           ..playout_underruns = stats.playoutUnderruns
-          ..capture_overruns = stats.captureOverruns;
+          ..capture_overruns = stats.captureOverruns
+          ..playout_queue_ms = stats.playoutQueueMs;
       }
       return result.value;
     });
@@ -126,6 +144,10 @@ final class NativeCoreDouble {
     CoreLinkChanged(:final up, :final peer) => (
       vc_event_type.VC_EVENT_LINK_CHANGED.value,
       jsonEncode({'up': up, 'peer': peer}),
+    ),
+    CoreTalkingChanged(:final talking) => (
+      vc_event_type.VC_EVENT_TALKING_CHANGED.value,
+      jsonEncode({'talking': talking}),
     ),
   };
 }

@@ -6,6 +6,8 @@ import 'package:voice_platform/src/models/platform_info.dart';
 import 'package:voice_platform/src/models/platform_state.dart';
 import 'package:voice_platform/src/models/room_config.dart';
 import 'package:voice_platform/src/models/room_role.dart';
+import 'package:voice_platform/src/models/talk_mode.dart';
+import 'package:voice_platform/src/models/vad_sensitivity.dart';
 import 'package:voice_platform/src/models/wifi_state.dart';
 
 // Conversions between the Pigeon messages and the public models. The public
@@ -51,6 +53,44 @@ extension WifiStateMessageToModel on WifiStateMessage {
   };
 }
 
+/// Converts [TalkMode] to its message.
+extension TalkModeToMessage on TalkMode {
+  /// The Pigeon message for this mode.
+  TalkModeMessage toMessage() => switch (this) {
+    TalkMode.voice => TalkModeMessage.voice,
+    TalkMode.pushToTalk => TalkModeMessage.pushToTalk,
+  };
+}
+
+/// Converts [TalkModeMessage] to the model.
+extension TalkModeMessageToModel on TalkModeMessage {
+  /// The public model for this message.
+  TalkMode toModel() => switch (this) {
+    TalkModeMessage.voice => TalkMode.voice,
+    TalkModeMessage.pushToTalk => TalkMode.pushToTalk,
+  };
+}
+
+/// Converts [VadSensitivity] to its message.
+extension VadSensitivityToMessage on VadSensitivity {
+  /// The Pigeon message for this sensitivity.
+  VadSensitivityMessage toMessage() => switch (this) {
+    VadSensitivity.low => VadSensitivityMessage.low,
+    VadSensitivity.medium => VadSensitivityMessage.medium,
+    VadSensitivity.high => VadSensitivityMessage.high,
+  };
+}
+
+/// Converts [VadSensitivityMessage] to the model.
+extension VadSensitivityMessageToModel on VadSensitivityMessage {
+  /// The public model for this message.
+  VadSensitivity toModel() => switch (this) {
+    VadSensitivityMessage.low => VadSensitivity.low,
+    VadSensitivityMessage.medium => VadSensitivity.medium,
+    VadSensitivityMessage.high => VadSensitivity.high,
+  };
+}
+
 /// Converts [RoomConfig] to its message.
 extension RoomConfigToMessage on RoomConfig {
   /// The Pigeon message for this configuration.
@@ -62,6 +102,8 @@ extension RoomConfigToMessage on RoomConfig {
     audioPort: audioPort,
     bitrateBps: bitrateBps,
     echoMode: echoMode,
+    talkMode: talkMode.toMessage(),
+    vadSensitivity: vadSensitivity.toMessage(),
   );
 }
 
@@ -76,6 +118,8 @@ extension RoomConfigMessageToModel on RoomConfigMessage {
     audioPort: audioPort,
     bitrateBps: bitrateBps,
     echoMode: echoMode,
+    talkMode: talkMode.toModel(),
+    vadSensitivity: vadSensitivity.toModel(),
   );
 }
 
@@ -116,5 +160,6 @@ extension PlatformStateMessageToModel on PlatformStateMessage {
     serviceRunning: serviceRunning,
     audioRoute: audioRoute.toModel(),
     wifiState: wifiState.toModel(),
+    systemCall: systemCall,
   );
 }
